@@ -14,7 +14,7 @@ function makeSprite(w, h, fn) { const cv = document.createElement('canvas'); cv.
 let SPR = null;
 function sprites() {
   if (SPR) return SPR;
-  SPR = { ghost: TIER_COL.map(col => makeSprite(48, 64, c => { c.scale(2, 2); c.translate(3, 3); ghostPath(c, 0, 0, 18, 26); c.fillStyle = col; c.fill(); c.fillStyle = 'rgba(10,10,40,.85)'; c.beginPath(); c.arc(7, 10, 2.2, 0, TAU); c.arc(13, 10, 2.2, 0, TAU); c.fill(); })),
+  SPR = { ghost: TIER_COL.map(col => makeSprite(192, 256, c => { c.scale(8, 8); c.translate(3, 3); ghostPath(c, 0, 0, 18, 26); c.fillStyle = col; c.fill(); c.fillStyle = 'rgba(10,10,40,.85)'; c.beginPath(); c.arc(7, 10, 2.2, 0, TAU); c.arc(13, 10, 2.2, 0, TAU); c.fill(); })),
     heat: makeSprite(72, 72, c => { const g = c.createRadialGradient(36, 36, 2, 36, 36, 36); g.addColorStop(0, 'rgba(255,48,24,.34)'); g.addColorStop(0.5, 'rgba(255,24,24,.13)'); g.addColorStop(1, 'rgba(255,0,0,0)'); c.fillStyle = g; c.fillRect(0, 0, 72, 72); }) };
   return SPR;
 }
