@@ -9,11 +9,27 @@
 const { put, list, del } = require('@vercel/blob');
 const SIM = require('../sim.js');
 const PLAY = require('../play.js');
+const crypto = require('crypto');
+const { isBadName } = require('../lib/names.js');
 
 const NAME_RE = /^[A-Za-z0-9-]{1,12}$/;
 const RESERVED = /^(alex|ghost)/i;          // these names need the owner key
 const prefix = () => `scores/v${SIM.VERSION}/`;
 let cache = { at: 0, data: null };
+
+// Rate limit: 6 submissions in 10 minutes and 30 in 24 hours for each visitor. One small marker file for each
+// attempt, under a hash of the address (the address itself is not stored), so the limit holds across server instances.
+const LIMIT_10MIN = 6, LIMIT_DAY = 30;
+async function rateLimited(req) {
+  const ip = String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown').split(',')[0].trim();
+  const id = crypto.createHash('sha256').update(ip + '|' + (process.env.OWNER_KEY || 'hg')).digest('hex').slice(0, 20), now = Date.now();
+  const r = await list({ prefix: `rl/${id}/`, limit: 200 }); let recent = 0, day = 0; const old = [];
+  for (const b of r.blobs) { const ts = +(/\/(\d+)\.txt$/.exec(b.pathname) || [])[1] || 0; if (now - ts < 600000) recent++; if (now - ts < 86400000) day++; else old.push(b.url); }
+  if (old.length) del(old.slice(0, 50)).catch(() => {});
+  if (recent >= LIMIT_10MIN || day >= LIMIT_DAY) return true;
+  await put(`rl/${id}/${now}.txt`, '1', { access: 'private', contentType: 'text/plain', addRandomSuffix: false });
+  return false;
+}
 
 function parse(pathname) {
   const m = /\/(\d{7})_(\d{3})_([hbp])_([A-Za-z0-9-]{1,12})_(\d+)\.json$/.exec(pathname);
@@ -29,7 +45,7 @@ async function board() {
   if (cache.data && Date.now() - cache.at < 8000) return cache.data;
   const rows = await all(), best = new Map();      // one row for each name and kind: the best one
   for (const r of rows) { const k = r.kind + ':' + r.name.toLowerCase(); if (!best.has(k)) best.set(k, r); }
-  cache = { at: Date.now(), data: [...best.values()].slice(0, 50).map(({ pathname, ...r }) => r) };
+  cache = { at: Date.now(), data: [...best.values()].filter(r => r.kind !== 'h' || !isBadName(r.name)).slice(0, 50).map(({ pathname, ...r }) => r) };
   return cache.data;
 }
 const save = (frames, deaths, kind, name) => put(`${prefix()}${String(frames).padStart(7, '0')}_${String(Math.min(deaths, 999)).padStart(3, '0')}_${kind}_${name}_${Date.now()}.json`,
@@ -45,6 +61,8 @@ module.exports = async (req, res) => {
     if (!NAME_RE.test(name)) return res.status(400).json({ error: 'name: 1 to 12 letters, digits or -' });
     const owner = !!process.env.OWNER_KEY && b.key === process.env.OWNER_KEY;
     if (RESERVED.test(name) && !owner) return res.status(403).json({ error: 'that name is reserved' });
+    if (!owner && isBadName(name)) return res.status(400).json({ error: 'choose a different name' });
+    if (!owner && await rateLimited(req)) return res.status(429).json({ error: 'too many tries; wait 10 minutes' });
     if (+b.version !== SIM.VERSION) return res.status(409).json({ error: 'the game has a new version; reload the page' });
 
     if (owner && b.par) {                         // owner only: a target time, shown with a PAR badge
@@ -63,7 +81,9 @@ module.exports = async (req, res) => {
     }
     const kind = /^ghost/i.test(name) ? 'b' : 'h';
     if (kind === 'h' && owner) for (const r of await all()) if (r.kind === 'p' && r.name.toLowerCase() === name.toLowerCase()) await del(r.pathname); // a real run replaces the par time
-    await save(frames, deaths, kind, name); cache.at = 0;
+    const mine = (await all()).filter(r => r.kind === kind && r.name.toLowerCase() === name.toLowerCase());
+    if (!mine.length || frames < mine[0].frames) { await save(frames, deaths, kind, name); for (const r of mine) await del(r.pathname); } // one stored run for each name: the best
+    cache.at = 0;
     const rows = await board(); const rank = rows.findIndex(r => r.name.toLowerCase() === name.toLowerCase() && r.kind === kind) + 1;
     return res.status(200).json({ ok: true, frames, deaths, kind, rank, scores: rows });
   } catch (e) { return res.status(500).json({ error: 'server', detail: String(e && e.message || e).slice(0, 200) }); }

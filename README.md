@@ -47,6 +47,9 @@ After a full run from stage 1, the results screen asks for a name and sends the 
 - **Storage:** one small file for each score in a private Vercel Blob store. All fields are in the file name, so a listing is the leaderboard.
 - **Badges:** `BOT` is a real, replay-checked run of a scripted ghost bot. `PAR` is a target time set by the owner, not a played run; a real run by the owner replaces it.
 - **Reserved names** (`alex`, `ghost…`) need an owner key that is not in this repository.
+- **Rate limit:** 6 submissions in 10 minutes and 30 in 24 hours for each visitor. The address is stored only as a hash.
+- **Names:** swear words and slurs are refused, also with digits, dashes or stretched letters (`lib/names.js`; the lists are stored in ROT13). A word list cannot catch all cases.
+- **One stored run for each name:** the best one.
 - **Limits:** names are not accounts, so two people can use the same name. The check proves that the inputs give the time; it cannot prove that a person, and not a script, made the inputs. Scores belong to a game version: a new `sim.js` version starts an empty board.
 - Local static server: the game plays, the leaderboard says that it is not available.
 
