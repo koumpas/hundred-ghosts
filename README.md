@@ -59,6 +59,16 @@ A player sets a nickname once (it is kept in that browser; N on the title screen
 - **Limits:** names are not accounts, so two people can use the same name. The check proves that the inputs give the time; it cannot prove that a person, and not a script, made the inputs. Scores belong to a game version: a new `sim.js` version starts an empty board.
 - Local static server: the game plays, the leaderboard says that it is not available.
 
+## Usage analytics (hosted game only)
+
+`analytics.js` sends a few events to PostHog so that the owner can see how many people play. It uses no SDK, no cookies, no session recording and no autocapture.
+
+- **What is sent:** `$pageview`, `game_loaded`, `game_started` (full run or one stage), `stage_cleared` (stage, seconds, deaths), `run_finished`, `score_saved`, `leaderboard_opened`, `swarm_watched`, `nickname_set`, and one `heartbeat` a minute while the visitor plays and the tab is visible. Each event has `game = hundred-ghosts`.
+- **Who:** a random id that is kept in the browser's localStorage. Nicknames are never sent. The page address is sent without its query string.
+- **Not sent:** on a local server, in bot runs (`auto=...`), in automated browsers, and when the browser sends Do Not Track or Global Privacy Control.
+- The key in the file is a PostHog project token, which is write-only and made to be public.
+- A random id in localStorage can still need consent in some countries. The game shows no consent notice.
+
 ## What the game draws by itself
 
 The death heatmap (red glow in the stage and in the whole-stage strip), one mid-skill pass-rate bar for each stage with the 60–80% band, the version badge, the seed, the bot counts, and the speed label. None of this is added in a video edit.

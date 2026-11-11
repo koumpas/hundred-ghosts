@@ -1,6 +1,7 @@
 // Hundred Ghosts - game shell: title, human play, swarm mode, replay mode, review sheets.
 (function () {
 'use strict';
+const track = (e, p) => { if (window.HGTrack) window.HGTrack(e, p); };
 const R = HGRender, SIM = HG_SIM, Q = new URLSearchParams(location.search), text = R.text, panel = R.panel;
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
 let LW = 960, LH = 540, dpr = 1;
@@ -59,7 +60,7 @@ function drawTitle() {
 
 // ---------- human play ----------
 const G = {};
-function startPlay(i, single) { state = 'play'; G.times = []; G.dcount = []; G.frames = []; G.rec = []; G.auto = Q.get('auto') === '1'; G.keys = Q.get('auto') === '2'; G.single = !!single; G.eligible = !G.auto && (G.single || i === 0); G.saved = []; startStage(i); }
+function startPlay(i, single) { state = 'play'; G.times = []; G.dcount = []; G.frames = []; G.rec = []; G.auto = Q.get('auto') === '1'; G.keys = Q.get('auto') === '2'; G.single = !!single; G.eligible = !G.auto && (G.single || i === 0); G.saved = []; startStage(i); track('game_started', { mode: G.single ? 'stage' : 'full', stage: i + 1 }); }
 function newBot() { const b = SIM.makeBot(99, 100, SEED + G.deaths * 7 + G.stage); b.start = 0; b.next = G.t; return b; }
 function startStage(i) { G.run = HGPlay.newRun(SIM, i); G.codes = []; G.stage = i; G.st = SIM.STAGES[i]; G.t = 0; G.deaths = 0; G.p = SIM.newPlayer(G.st); G.cam = 0; G.respawn = 0; G.clear = 0; G.sq = 0; G.shake = 0; G.parts = new R.Particles(); G.intro = 100; G.bot = newBot(); HG.stage = i; }
 function updatePlay() {
@@ -75,7 +76,7 @@ function updatePlay() {
     if (stepped) { const fx = q.x + 9, fy = q.y + 26;
       if (q.ev & 1) { G.sq = -0.5; G.parts.burst(fx, fy, 5, '#dfe2ff', 1.6, 16); } if (q.ev & 2) { G.sq = 0.6; G.parts.burst(fx, fy, 6, '#dfe2ff', 1.8, 16); } if (q.ev & 4) { G.sq = -0.9; G.parts.burst(fx, fy, 12, '#7cff6b', 3.5, 24); G.shake = 3; }
       if (ev & 1) { G.shake = 11; G.parts.burst(fx, Math.min(q.y + 13, 530), 26, '#ff5d73', 5, 40); G.parts.burst(fx, Math.min(q.y + 13, 530), 10, '#fff', 3, 30); }
-      if (ev & 2) { G.clear = 80; G.frames[G.stage] = run.frames; G.times[G.stage] = +(run.frames / 60).toFixed(2); G.dcount[G.stage] = run.deaths; G.rec[G.stage] = HGPlay.encode(G.codes); autoSaveStage(G.stage); G.parts.burst(st.goalX, st.goalY - 40, 40, '#ffe27a', 5, 50); } }
+      if (ev & 2) { G.clear = 80; G.frames[G.stage] = run.frames; G.times[G.stage] = +(run.frames / 60).toFixed(2); G.dcount[G.stage] = run.deaths; G.rec[G.stage] = HGPlay.encode(G.codes); autoSaveStage(G.stage); track('stage_cleared', { stage: G.stage + 1, stage_name: st.name, seconds: +(run.frames / 60).toFixed(2), deaths: run.deaths, mode: G.single ? 'stage' : 'full' }); G.parts.burst(st.goalX, st.goalY - 40, 40, '#ffe27a', 5, 50); } }
     const wW = st.W * SIM.T, tg = Math.max(0, Math.min(wW - LW, G.p.x - LW * 0.4)); G.cam += (tg - G.cam) * 0.14; return;
   }
   if (G.respawn > 0) { G.t++; if (--G.respawn === 0) { G.p = SIM.newPlayer(st); G.bot = newBot(); } return; }
@@ -111,9 +112,10 @@ const store = { get(k) { try { return localStorage.getItem(k) || ''; } catch (e)
 if (Q.get('owner')) store.set('hg_owner', Q.get('owner'));
 const sec = f => (f / 60).toFixed(2) + ' s';
 function loadBoard() { B.status = 'loading…'; fetch('api/scores', { cache: 'no-store' }).then(r => r.ok ? r.json() : Promise.reject()).then(d => { setBoards(d); B.status = ''; }).catch(() => { B.rows = B.stages = null; B.status = 'leaderboard not available here (it needs the hosted game)'; }); }
-function openBoard() { state = 'board'; B.mine = ''; loadBoard(); }
+function openBoard() { track('leaderboard_opened'); state = 'board'; B.mine = ''; loadBoard(); }
 function openSelect() { state = 'select'; loadBoard(); }
-function openResults() { B.busy = false; B.sent = false; B.records = G.saved.map((v, i) => v === 'record' ? i : -1).filter(i => i >= 0); B.mine = nick(); B.status = ''; loadBoard(); if (!G.single) autoSaveRun(); }
+function openResults() { if (!G.single && !G.auto && G.frames.filter(f => f !== undefined).length === NST) track('run_finished', { seconds: +(G.frames.reduce((a, b) => a + b, 0) / 60).toFixed(2), deaths: G.dcount.reduce((a, b) => a + b, 0) });
+  B.busy = false; B.sent = false; B.records = G.saved.map((v, i) => v === 'record' ? i : -1).filter(i => i >= 0); B.mine = nick(); B.status = ''; loadBoard(); if (!G.single) autoSaveRun(); }
 const stageRecord = i => B.stages && B.stages[i] && B.stages[i][0] || null;   // the record of a stage: the first row of its list
 const stagePerfect = i => B.perfectStages[i] || null;
 
@@ -123,7 +125,7 @@ if (Q.get('name') && NAME_OK.test(Q.get('name'))) store.set('hg_name', Q.get('na
 function nick() { const n = store.get('hg_name'); return NAME_OK.test(n) ? n : ''; }
 function needName(next) { if (nick() || Q.get('auto') === '1') { next(); return; } nameNext = next; nameDraft = ''; state = 'name'; }
 function editName() { nameNext = () => { state = 'title'; }; nameDraft = nick(); state = 'name'; }
-function confirmName() { if (!NAME_OK.test(nameDraft)) return; store.set('hg_name', nameDraft); B.nameError = ''; const n = nameNext; nameNext = null; pressed = []; taps = []; if (n) n(); }
+function confirmName() { if (!NAME_OK.test(nameDraft)) return; track('nickname_set'); store.set('hg_name', nameDraft); B.nameError = ''; const n = nameNext; nameNext = null; pressed = []; taps = []; if (n) n(); }
 addEventListener('keydown', e => { if (state !== 'name') return;
   if (e.key.length === 1 && /[A-Za-z0-9-]/.test(e.key) && nameDraft.length < 12) nameDraft += e.key; else if (e.key === 'Backspace') nameDraft = nameDraft.slice(0, -1); else if (e.key === 'Enter') confirmName(); else return; e.preventDefault(); });
 function updateName() {
@@ -152,13 +154,13 @@ function autoSaveStage(i) {                 // at each stage clear, also in a fu
   if (G.auto || !nick() || !G.rec[i]) return; const f = G.frames[i], pb = +store.get(pbKey('s' + i)) || 1e9;
   if (f >= pb) { G.saved[i] = 'kept'; return; } G.saved[i] = 'saving';
   post({ stage: i, rec: G.rec[i] }, ({ ok, d }) => { if (!ok) { G.saved[i] = 'failed'; failed(d); return; }
-    store.set(pbKey('s' + i), f); setBoards(d); B.mine = nick(); B.kind = d.kind; G.saved[i] = (d.records || []).includes(i) ? 'record' : 'saved'; if (G.saved[i] === 'record' && !B.records.includes(i)) B.records.push(i); if (G.single) HG.submitted = d; HG.savedStages = (HG.savedStages || 0) + 1; });
+    store.set(pbKey('s' + i), f); setBoards(d); B.mine = nick(); B.kind = d.kind; G.saved[i] = (d.records || []).includes(i) ? 'record' : 'saved'; track('score_saved', { kind: 'stage', stage: i + 1, record: G.saved[i] === 'record' }); if (G.saved[i] === 'record' && !B.records.includes(i)) B.records.push(i); if (G.single) HG.submitted = d; HG.savedStages = (HG.savedStages || 0) + 1; });
 }
 function autoSaveRun() {                    // at the end of a full run from stage 1
   if (!G.eligible || G.rec.filter(Boolean).length !== NST || !nick()) return; const tot = G.frames.reduce((a, b) => a + b, 0), pb = +store.get(pbKey('run')) || 1e9;
   if (tot >= pb) { B.sent = true; B.status = 'your best full run is still ' + sec(pb); return; } B.busy = true; B.status = 'saving your run…';
   post({ stages: G.rec }, ({ ok, d }) => { B.busy = false; if (!ok) { failed(d); return; }
-    store.set(pbKey('run'), tot); setBoards(d); B.sent = true; B.mine = nick(); B.kind = d.kind; HG.submitted = d; B.status = 'saved as ' + nick() + ' · rank ' + d.rank + ' · checked by replay on the server'; });
+    store.set(pbKey('run'), tot); setBoards(d); B.sent = true; B.mine = nick(); B.kind = d.kind; HG.submitted = d; track('score_saved', { kind: 'run', rank: d.rank }); B.status = 'saved as ' + nick() + ' · rank ' + d.rank + ' · checked by replay on the server'; });
 }
 function updateResults() {
   if (hit('Escape')) { state = G.single ? 'select' : 'title'; return; }
@@ -244,7 +246,7 @@ function drawResults() {
 
 // ---------- swarm mode ----------
 const W = {};
-function startSwarm(stage) { state = 'swarm'; HG.mode = 'swarm'; HG.over = false; W.tour = stage === 'all'; W.bars = barsOf(SIM.VERSION); if (W.tour) W.bars = new Array(NST).fill(null); W.hold = 0; W.done = false; swarmStage(W.tour ? 0 : stage); }
+function startSwarm(stage) { track('swarm_watched'); state = 'swarm'; HG.mode = 'swarm'; HG.over = false; W.tour = stage === 'all'; W.bars = barsOf(SIM.VERSION); if (W.tour) W.bars = new Array(NST).fill(null); W.hold = 0; W.done = false; swarmStage(W.tour ? 0 : stage); }
 function swarmStage(i) { W.view = new R.SwarmView(SIM, i, SEED, { bars: W.bars }); W.hold = 0; HG.stage = i; }
 function updateSwarm() {
   if (hit('Escape')) { state = 'title'; return; }
