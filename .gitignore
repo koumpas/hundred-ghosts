@@ -4,3 +4,4 @@ skill-test/
 post/
 skill/
 .vercel
+.env*
