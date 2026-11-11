@@ -9,97 +9,93 @@
 <canvas id="c" width="1080" height="1080"></canvas>
 <script src="render.js"></script>
 <script>
-// Square cut of the story for a social video.
-//   1. the game itself (one ghost, normal play)   2. the system (100 bots)   3. some of the versions
-//   4. v1 against the last version, same seed      5. end card
-// Every number, commit title and diff line comes from log/history.json; the game areas run versions/vN.js live.
-// ?v=1,3,6,7,12 picks the versions; ?capture=1 lets tools/render-post.mjs drive it frame by frame.
+// Square cut of the story for a social video. One idea and one headline for each shot.
+//   1. both facts: the game (one ghost) above, the 100 bots below      2. normal play
+//   3. the system: 100 bots, red = deaths                               4. (off by default) v1..vN counter
+//   5. v1 against the last version, same seed                           6. end card
+// All numbers come from log/history.json; the game areas run versions/vN.js live.
+// ?capture=1 lets tools/render-post.mjs drive it frame by frame.
 // Headline font: Phosphate (a macOS system font). Other systems fall back to Impact.
 (async function () {
-  const Q = new URLSearchParams(location.search), SPEED = +(Q.get('speed') || 8), SEED = 101, FPS = 30, CAP = Q.get('capture') === '1';
-  const H = await (await fetch('log/history.json', { cache: 'no-store' })).json(), ALL = H.versions, N = ALL.length, LAST = ALL[N - 1];
-  const PICK = (Q.get('v') || '1,3,6,7,12').split(',').map(x => ALL.find(v => v.version === +x)).filter(Boolean);
-  const need = [...new Set([1, LAST.version, ...PICK.map(v => v.version)])];
-  await Promise.all(need.map(n => new Promise((ok, bad) => { const s = document.createElement('script'); s.src = 'versions/v' + n + '.js'; s.onload = ok; s.onerror = bad; document.head.appendChild(s); })));
-  const DISP = '"Phosphate", "Impact", "Arial Black", sans-serif', BODY = '"Futura", "Avenir Next", "Segoe UI", sans-serif', MONO = 'ui-monospace, "SF Mono", Menlo, monospace';
+  const Q = new URLSearchParams(location.search), SEED = 101, FPS = 30, CAP = Q.get('capture') === '1';
+  const H = await (await fetch('log/history.json', { cache: 'no-store' })).json(), ALL = H.versions, N = ALL.length, FIRST = ALL[0], LAST = ALL[N - 1];
+  await Promise.all([1, LAST.version].map(n => new Promise((ok, bad) => { const s = document.createElement('script'); s.src = 'versions/v' + n + '.js'; s.onload = ok; s.onerror = bad; document.head.appendChild(s); })));
+  const DISP = '"Phosphate", "Impact", "Arial Black", sans-serif', BODY = '"Futura", "Avenir Next", "Segoe UI", sans-serif';
   try { await Promise.all([document.fonts.load('80px Phosphate'), document.fonts.load('700 30px Futura')]); } catch (e) {}
-  const R = HGRender, cv = document.getElementById('c'), c = cv.getContext('2d'), W = 1080, GH = 608, API = HG_VERSIONS[LAST.version];
+  const R = HGRender, cv = document.getElementById('c'), c = cv.getContext('2d'), W = 1080, API = HG_VERSIONS[LAST.version];
   const put = (font, s, x, y, col, align) => { c.font = font; c.fillStyle = col; c.textAlign = align || 'left'; c.textBaseline = 'alphabetic'; c.fillText(s, x, y); };
-  const D = (s, x, y, size, col, align) => put(`${size}px ${DISP}`, s, x, y, col, align);            // headline
-  const F = (s, x, y, size, col, align, wt) => put(`${wt || 700} ${size}px ${BODY}`, s, x, y, col, align); // body
-  function wrap(s, x, y, maxW, size, col, lh, maxLines) { c.font = `700 ${size}px ${BODY}`; let line = '', n = 0; for (const w of s.split(' ')) { const t = line ? line + ' ' + w : w; if (c.measureText(t).width > maxW && line) { if (++n === maxLines) { F(line.replace(/.{2}$/, '') + '…', x, y, size, col); return y; } F(line, x, y, size, col); y += lh; line = w; } else line = t; } F(line, x, y, size, col); return y; }
-  function mono(s, x, y, size, col, maxW) { c.font = `600 ${size}px ${MONO}`; while (c.measureText(s).width > maxW && s.length > 8) s = s.slice(0, -2); c.fillStyle = col; c.textAlign = 'left'; c.fillText(s, x, y); }
-  function pickStage(v) { const i = ALL.indexOf(v), m = v.metrics.mid; if (i === 0) return m.indexOf(Math.min(...m)); const p = ALL[i - 1].metrics.mid; let b = 0, d = -1; m.forEach((x, s) => { const dd = Math.abs(x - p[s]); if (dd > d) { d = dd; b = s; } }); return b; }
-  const SRC = {}; await Promise.all(PICK.map(async v => { const t = await (await fetch('versions/v' + v.version + '.js')).text(); SRC[v.version] = t.split('\n').map((l, i) => /^\s*build\('/.test(l) ? i + 1 : 0).filter(Boolean); }));
-  function hunkFor(v, stage) { const hs = v.git.simDiff; if (!hs.length) return null; const st = SRC[v.version], lo = st[stage], hi = st[stage + 1] || 1e9;
-    const inStage = hs.filter(h => { const n = +(/\+(\d+)/.exec(h.hunk) || [])[1]; return n >= lo && n < hi; }); const pool = inStage.length ? inStage : hs;
-    return pool.slice().sort((a, b) => (a.del.length + a.add.length) - (b.del.length + b.add.length))[0]; }
-  function chart(x, y, w, h, curV) { const pw = w / N; ALL.forEach((v, i) => { const on = v.version <= curV, bh = (h - 22) * v.metrics.inBand / 8; c.fillStyle = on ? (v.metrics.inBand === 8 ? '#5df2a0' : 'rgba(93,242,160,.5)') : 'rgba(255,255,255,.07)'; c.fillRect(x + i * pw + 5, y + h - 22 - bh, pw - 10, Math.max(bh, 2)); F('v' + v.version, x + i * pw + pw / 2, y + h - 3, 15, v.version === curV ? '#fff' : '#7d83b0', 'center'); if (on) F(v.metrics.inBand + '', x + i * pw + pw / 2, y + h - 27 - bh, 15, '#5df2a0', 'center'); }); }
+  // headline: shrinks to fit maxW
+  function D(s, x, y, size, col, align, maxW) { if (maxW) { c.font = `${size}px ${DISP}`; while (c.measureText(s).width > maxW && size > 20) { size -= 2; c.font = `${size}px ${DISP}`; } } put(`${size}px ${DISP}`, s, x, y, col, align); }
+  const F = (s, x, y, size, col, align, wt) => put(`${wt || 700} ${size}px ${BODY}`, s, x, y, col, align);
+  const shade = (y, h, a) => { const g = c.createLinearGradient(0, y, 0, y + h); g.addColorStop(0, `rgba(6,7,22,${a})`); g.addColorStop(1, 'rgba(6,7,22,0)'); c.fillStyle = g; c.fillRect(0, y, W, h); };
+  const tag = (s, x, y) => { c.font = `600 20px ${BODY}`; const w = c.measureText(s).width + 28; c.fillStyle = 'rgba(8,10,28,.8)'; c.beginPath(); c.roundRect(x - w, y - 27, w, 38, 10); c.fill(); F(s, x - 14, y, 20, '#ffe27a', 'right', 600); };
+  // the version where a fix made one stage much worse (largest drop of a mid-skill pass rate), from the data
+  let FAIL = { drop: 0 }; ALL.forEach((v, i) => { if (!i) return; v.metrics.mid.forEach((m, s) => { const d = ALL[i - 1].metrics.mid[s] - m; if (d > FAIL.drop) FAIL = { drop: d, i, stage: s, from: ALL[i - 1].metrics.mid[s], to: m }; }); });
 
   // ---- normal play: one ghost, driven by the top-skill bot through the same step() a person uses ----
-  const Z = 1.7, OY = 1120 - 544 * Z, VIEWW = W / Z;
-  function Play(stage, skip) { this.stage = stage; this.st = API.STAGES[stage]; this.t = 0; this.deaths = 0; this.parts = new R.Particles(); this.sq = 0; this.shake = 0; this.respawn = 0; this.cam = 0; this.spawn(); for (let i = 0; i < skip; i++) this.step(); this.cam = this.target(); }
+  function Play(stage, skip, Z, top, h) { this.stage = stage; this.st = API.STAGES[stage]; this.Z = Z; this.top = top; this.h = h; this.vw = W / Z; this.t = 0; this.deaths = 0; this.parts = new R.Particles(); this.sq = 0; this.shake = 0; this.respawn = 0; this.spawn(); for (let i = 0; i < skip; i++) this.step(); this.cam = this.target(); }
   Play.prototype.spawn = function () { this.p = API.newPlayer(this.st); this.bot = API.makeBot(99, 100, SEED + this.stage + this.deaths * 7); this.bot.start = 0; this.bot.next = this.t; };
-  Play.prototype.target = function () { return Math.max(0, Math.min(this.st.W * API.T - VIEWW, this.p.x - VIEWW * 0.36)); };
+  Play.prototype.target = function () { return Math.max(0, Math.min(this.st.W * API.T - this.vw, this.p.x - this.vw * 0.36)); };
   Play.prototype.step = function () { const p = this.p; this.parts.update(); this.sq *= 0.82; this.shake *= 0.85;
     if (this.respawn > 0) { this.t++; if (--this.respawn === 0) this.spawn(); return; } if (p.done) { this.t++; return; }
     API.botStep(this.st, this.bot, p, this.t); const fx = p.x + 9, fy = p.y + 26;
     if (p.ev & 1) { this.sq = -0.5; this.parts.burst(fx, fy, 5, '#dfe2ff', 1.6, 16); } if (p.ev & 2) { this.sq = 0.6; this.parts.burst(fx, fy, 6, '#dfe2ff', 1.8, 16); } if (p.ev & 4) { this.sq = -0.9; this.parts.burst(fx, fy, 12, '#7cff6b', 3.5, 24); this.shake = 3; }
     if (!p.alive) { this.deaths++; this.shake = 11; this.parts.burst(fx, Math.min(p.y + 13, 530), 26, '#ff5d73', 5, 40); this.respawn = 40; } else if (p.done) this.parts.burst(this.st.goalX, this.st.goalY - 40, 40, '#ffe27a', 5, 50);
     this.t++; this.cam += (this.target() - this.cam) * 0.14; };
-  Play.prototype.draw = function () { const p = this.p, sh = this.shake > 0.4 ? this.shake : 0; R.drawBackdrop(c, this.st, this.cam, W, 1080);
-    c.save(); c.translate(Math.sin(this.t * 1.9) * sh, OY + Math.cos(this.t * 2.3) * sh); c.scale(Z, Z); c.translate(-this.cam, 0); R.drawWorld(c, API, this.st, this.t, this.cam, VIEWW, { cr: p.cr }); this.parts.draw(c);
+  Play.prototype.draw = function () { const p = this.p, sh = this.shake > 0.4 ? this.shake : 0, Z = this.Z;
+    c.save(); c.beginPath(); c.rect(0, this.top, W, this.h); c.clip(); c.translate(0, this.top); R.drawBackdrop(c, this.st, this.cam, W, this.h);
+    c.translate(Math.sin(this.t * 1.9) * sh, this.h + 40 * Z - 544 * Z + Math.cos(this.t * 2.3) * sh); c.scale(Z, Z); c.translate(-this.cam, 0); R.drawWorld(c, API, this.st, this.t, this.cam, this.vw, { cr: p.cr }); this.parts.draw(c);
     if (p.alive && this.respawn === 0 && !p.done) R.drawPlayer(c, p, this.t, this.sq + Math.max(-0.3, Math.min(0.3, -p.vy * 0.02))); c.restore(); };
 
   // ---- timeline (frames at 30 fps) ----
-  const CLIPS = [[0, 0, 132], [2, 20, 72], [5, 16, 72]]; // stage index, frames to skip, length
-  const G_FR = CLIPS.reduce((a, k) => a + k[2], 0), S_FR = 112, B_FR = 78, A_FR = 132, C_FR = 112, TITLE = 78;
-  const T_S = G_FR, T_B = T_S + S_FR, T_A = T_B + PICK.length * B_FR, T_C = T_A + A_FR, TOTAL = T_C + C_FR;
+  const S1 = 126, CLIPS = [[2, 24, 46], [5, 16, 46]], S2 = CLIPS.reduce((a, k) => a + k[2], 0), S3 = 120, TICK = 8, HOLD = 66, S4 = Q.get('versions') === '1' ? (N - 1) * TICK + HOLD + 24 : 0, S5 = 126, S6 = 114;
+  const T2 = S1, T3 = T2 + S2, T4 = T3 + S3, T5 = T4 + S4, T6 = T5 + S5, TOTAL = T6 + S6;
   let scene = null, views = null, play = null;
   function setup(f) {
-    let key; if (f < G_FR) { let a = 0, k = 0; for (; k < CLIPS.length; k++) { if (f < a + CLIPS[k][2]) break; a += CLIPS[k][2]; } key = 'G' + k; } else if (f < T_B) key = 'S'; else if (f < T_A) key = 'B' + Math.floor((f - T_B) / B_FR); else if (f < T_C) key = 'A'; else key = 'C';
+    let key; if (f < T2) key = '1'; else if (f < T3) key = '2' + (f - T2 < CLIPS[0][2] ? 'a' : 'b'); else if (f < T4) key = '3'; else if (f < T5) key = '4'; else if (f < T6) key = '5'; else key = '6';
     if (key === scene) return; scene = key;
-    if (key[0] === 'G') { const k = CLIPS[+key.slice(1)]; play = new Play(k[0], k[1]); }
-    else if (key === 'S') views = [new R.SwarmView(API, 0, SEED, { bars: LAST.metrics.mid })];
-    else if (key[0] === 'B') { const v = PICK[+key.slice(1)]; views = [new R.SwarmView(HG_VERSIONS[v.version], pickStage(v), SEED, { bars: v.metrics.mid })]; views.v = v; }
-    else if (key === 'A') views = [new R.SwarmView(HG_VERSIONS[1], 1, SEED, {}), new R.SwarmView(API, 1, SEED, {})];
+    if (key === '1') { play = new Play(0, 0, 1.5, 0, 540); views = [new R.SwarmView(API, 0, SEED, {})]; }
+    else if (key[0] === '2') { const k = CLIPS[key[1] === 'a' ? 0 : 1]; play = new Play(k[0], k[1], 1.7, 0, 1080); }
+    else if (key === '3') views = [new R.SwarmView(API, 1, SEED, {})];
+    else if (key === '5') views = [new R.SwarmView(HG_VERSIONS[1], 1, SEED, {}), new R.SwarmView(API, 1, SEED, {})];
   }
-  function step() { if (scene[0] === 'G') { play.step(); play.step(); } else if (scene === 'S') views[0].update(8); else if (scene !== 'C') views.forEach(v => v.update(SPEED * 2)); }
-  const pill = (x, y, w, h, a) => { c.fillStyle = `rgba(8,10,28,${a})`; c.beginPath(); c.roundRect(x, y, w, h, 14); c.fill(); };
+  function step() { if (scene === '1') { play.step(); play.step(); views[0].update(6); } else if (scene[0] === '2') { play.step(); play.step(); } else if (scene === '3') views[0].update(8); else if (scene === '5') views.forEach(v => v.update(16)); }
+  function versionAt(g) { // shot 4: which version is shown at local frame g, and whether it is the stop on the failed fix
+    const before = FAIL.i * TICK; if (g < before) return { i: Math.floor(g / TICK), hold: false }; if (g < before + HOLD) return { i: FAIL.i, hold: true, k: (g - before) / HOLD }; return { i: Math.min(N - 1, FAIL.i + 1 + Math.floor((g - before - HOLD) / TICK)), hold: false }; }
   function draw(f) {
     c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1; c.fillStyle = '#0b0d22'; c.fillRect(0, 0, W, 1080);
-    if (scene[0] === 'G') {
-      play.draw();
-      const a = f < TITLE ? 1 : Math.max(0, 1 - (f - TITLE) / 14); // title card over the running game, then it clears
-      if (a > 0) { c.globalAlpha = a; c.fillStyle = 'rgba(6,7,22,.72)'; c.fillRect(0, 0, W, 1080); D('I MADE THIS GAME', 540, 470, 118, '#fff', 'center'); D('WITH FABLE 5.2.', 540, 590, 118, '#ffe27a', 'center'); F('It is called Hundred Ghosts.', 540, 660, 34, '#c9cdf5', 'center', 500); c.globalAlpha = 1; }
-      if (a < 1) { c.globalAlpha = 1 - a; D('HUNDRED GHOSTS', 44, 104, 76, '#fff'); F('stage ' + (play.stage + 1) + ' of 8 · ' + play.st.name, 48, 148, 30, '#ffe27a');
-        pill(40, 962, 1000, 82, 0.82); F('I made this game with Fable 5.2.', 540, 1016, 42, '#fff', 'center'); c.globalAlpha = 1; }
-    } else if (scene === 'S') {
-      views[0].draw(c, 0, 0, W, GH, { full: true, speed: 4, versionLabel: LAST.version });
-      D('THEN I BUILT A SYSTEM', 40, 706, 84, '#fff'); D('TO IMPROVE IT.', 40, 790, 84, '#ff7ad9');
-      [['1', '100 bots play every stage, each with a different skill.'], ['2', 'The game marks every death in red and counts who finishes.'], ['3', 'Fable 5.2 reads the numbers, changes the game, and commits.']].forEach((r, i) => { const y = 858 + i * 50; c.fillStyle = '#ff7ad9'; c.beginPath(); c.arc(60, y - 10, 19, 0, 7); c.fill(); F(r[0], 60, y - 1, 24, '#10122c', 'center'); F(r[1], 96, y, 29, '#e6e8ff', 'left', 500); });
-      F('Repeat until 60–80% of mid-skill bots finish every stage.', 40, 1036, 25, '#ffe27a');
-    } else if (scene[0] === 'B') {
-      const v = views.v, i = ALL.indexOf(v), prev = i ? ALL[i - 1] : null; views[0].draw(c, 0, 0, W, GH, { full: true, speed: SPEED, versionLabel: v.version });
-      D('V' + v.version, 36, 780, 176, '#ff7ad9'); F('version ' + v.version + ' of ' + N, 40, 816, 22, '#9aa0c8');
-      const band = v.metrics.inBand, bc = band === 8 ? '#5df2a0' : band >= 4 ? '#ffb347' : '#ff5d73'; c.fillStyle = bc; c.beginPath(); c.roundRect(40, 832, 262, 44, 8); c.fill(); F(band + ' of 8 stages fair', 171, 863, 24, '#10122c', 'center');
-      let y = wrap(v.git.subject, 340, 668, 705, 30, '#fff', 38, 3) + 44;
-      const h = hunkFor(v, views[0].stageIndex); if (h) { if (h.del) { mono('- ' + h.del, 340, y, 22, '#ff8fa0', 705); y += 30; } if (h.add) { mono('+ ' + h.add, 340, y, 22, '#7df5b4', 705); y += 30; } } else { mono('first commit', 340, y, 22, '#7d83b0', 705); y += 30; }
-      const d = prev && prev.panelScore != null ? v.panelScore - prev.panelScore : null; y = Math.max(y + 14, 852);
-      F('playtesters ' + v.panelScore.toFixed(1) + ' / 10', 340, y, 30, '#ffe27a'); if (d != null) F((d >= 0 ? '▲ ' : '▼ ') + Math.abs(d).toFixed(1), 690, y, 30, d >= 0 ? '#5df2a0' : '#ff5d73');
-      chart(40, 906, 1000, 150, v.version); F('stages in the 60–80% pass band, by version (showing ' + PICK.length + ' of ' + N + ')', 40, 902, 16, '#7d83b0');
-    } else if (scene === 'A') {
-      views[0].draw(c, 0, 0, W, 303, { versionLabel: 1, accent: '#ff8fa0' }); views[1].draw(c, 0, 305, W, 303, { versionLabel: LAST.version, accent: '#5df2a0' }); c.fillStyle = '#fff'; c.fillRect(0, 303, W, 2);
-      D('SAME STAGE. SAME SEED.', 40, 704, 78, '#fff'); F('Top: the first version. Bottom: version ' + LAST.version + '.', 40, 752, 30, '#c9cdf5', 'left', 500);
+    if (scene === '1') {
+      play.draw(); views[0].draw(c, 0, 540, W, 540, { none: true }); c.fillStyle = '#fff'; c.fillRect(0, 538, W, 4);
+      shade(0, 250, 0.85); shade(542, 270, 0.85);
+      D('I BUILT THIS GAME', 540, 96, 92, '#fff', 'center', 1000); D('WITH FABLE 5.2.', 540, 186, 92, '#ffe27a', 'center', 1000);
+      D('THEN IT PLAYED ITSELF ' + H.totals.botRuns.toLocaleString('en') + ' TIMES', 540, 632, 70, '#fff', 'center', 1010); D('AND FIXED WHAT IT FOUND.', 540, 712, 70, '#ff7ad9', 'center', 1010);
+      tag('bots at ×3 speed', W - 20, 1052);
+    } else if (scene[0] === '2') {
+      play.draw(); shade(0, 220, 0.7); D('HUNDRED GHOSTS', 540, 110, 96, '#fff', 'center'); F('8 stages · ' + play.st.name, 540, 160, 32, '#ffe27a', 'center');
+    } else if (scene === '3') {
+      views[0].draw(c, 0, 0, W, 1080, { none: true }); shade(0, 300, 0.85);
+      D('100 BOTS PLAY', 540, 110, 104, '#fff', 'center'); D('EVERY STAGE.', 540, 212, 104, '#fff', 'center');
+      c.fillStyle = 'rgba(8,10,28,.86)'; c.beginPath(); c.roundRect(60, 900, 960, 120, 18); c.fill(); D('RED = WHERE THEY DIE.', 540, 958, 56, '#ff5d73', 'center'); F('Fable 5.2 reads that, and fixes the stage.', 540, 1000, 30, '#e6e8ff', 'center', 500);
+      tag('×4 speed', W - 20, 876);
+    } else if (scene === '4') {
+      const s = versionAt(f - T4), v = ALL[s.i];
+      D('MEASURE. FIX. REPEAT.', 540, 120, 84, '#fff', 'center', 1000);
+      D('V' + v.version, 540, 470, 330, s.hold ? '#ff5d73' : v.version === LAST.version ? '#5df2a0' : '#ff7ad9', 'center');
+      if (s.hold) { D('ITS OWN FIX BROKE A STAGE.', 540, 580, 64, '#fff', 'center', 1000); D(Math.round(FAIL.from) + '% → ' + Math.round(FAIL.to) + '%', 540, 668, 84, '#ff5d73', 'center'); F('of mid-skill bots finish stage ' + (FAIL.stage + 1) + '. Reverted in v' + (v.version + 1) + '.', 540, 714, 28, '#c9cdf5', 'center', 500); }
+      else { D(v.metrics.inBand + ' OF 8 STAGES FAIR', 540, 600, 76, v.metrics.inBand === 8 ? '#5df2a0' : '#fff', 'center', 1000); }
+      const x0 = 90, cw = 900, pw = cw / N, base = 990, ch = 200;
+      ALL.forEach((u, i) => { const on = i <= s.i, bh = ch * u.metrics.inBand / 8; c.fillStyle = !on ? 'rgba(255,255,255,.07)' : u.metrics.inBand === 8 ? '#5df2a0' : i === FAIL.i && s.i >= FAIL.i ? '#ff5d73' : 'rgba(93,242,160,.55)'; c.beginPath(); c.roundRect(x0 + i * pw + 8, base - Math.max(bh, 6), pw - 16, Math.max(bh, 6), 6); c.fill(); F('v' + u.version, x0 + i * pw + pw / 2, base + 34, 22, i === s.i ? '#fff' : '#7d83b0', 'center'); });
+    } else if (scene === '5') {
+      views[0].draw(c, 0, 0, W, 398, { none: true }); views[1].draw(c, 0, 402, W, 398, { none: true }); c.fillStyle = '#fff'; c.fillRect(0, 398, W, 4);
+      const lab = (s, y, col) => { c.fillStyle = col; c.beginPath(); c.roundRect(24, y, 150, 74, 12); c.fill(); D(s, 99, y + 58, 60, '#10122c', 'center'); }; lab('V1', 22, '#ff8fa0'); lab('V' + LAST.version, 424, '#5df2a0');
       const a = Math.round(views[0].midPct()), b = Math.round(views[1].midPct());
-      D('V1', 40, 912, 124, '#ff8fa0'); D(a + '%', 200, 912, 124, '#fff'); D('→', 500, 900, 90, '#7d83b0', 'center'); D('V' + LAST.version, 570, 912, 124, '#5df2a0'); D(b + '%', 1040, 912, 124, '#fff', 'right');
-      F('mid-skill bots that finish stage 2 · seed ' + SEED + ' · same 100 bot skill profiles', 40, 966, 23, '#9aa0c8'); pill(W - 250, 1006, 230, 38, 0.85); F('▶▶ sim ×' + SPEED + ' speed', W - 135, 1032, 19, '#ffe27a', 'center');
+      D('SAME STAGE. SAME SEED.', 540, 900, 80, '#fff', 'center', 1000); D(a + '%', 300, 1020, 120, '#ff8fa0', 'center'); D('→', 540, 1006, 90, '#7d83b0', 'center'); D(b + '%', 790, 1020, 120, '#5df2a0', 'center');
+      F('finish', 540, 1056, 24, '#9aa0c8', 'center', 500); tag('×8 speed', W - 20, 384);
     } else {
-      const a = ALL[0]; D('I MADE IT WITH FABLE 5.2.', 540, 120, 70, '#fff', 'center'); D('THE SYSTEM MADE IT FAIR.', 540, 200, 70, '#ffe27a', 'center');
-      D('V1', 330, 370, 150, '#ff8fa0', 'center'); D('→', 540, 352, 100, '#7d83b0', 'center'); D('V' + LAST.version, 760, 370, 150, '#5df2a0', 'center');
-      const rows = [[`${a.metrics.inBand} OF 8 → ${LAST.metrics.inBand} OF 8`, 'stages in the fair band (60–80% of mid-skill bots finish)'], [`${a.panelScore.toFixed(1)} → ${LAST.panelScore.toFixed(1)}`, 'playtester panel score out of 10'], [H.totals.botRuns.toLocaleString('en'), 'bot runs'], [N + ' COMMITS', 'each with its measurement in the message']];
-      rows.forEach((r, k) => { D(r[0], 540, 500 + k * 124, 80, '#fff', 'center'); F(r[1], 540, 538 + k * 124, 24, '#9aa0c8', 'center', 500); });
-      F('Bots are scripts with noise. Reviewers are AI subagents. No human playtest yet.', 540, 1030, 22, '#7d83b0', 'center', 500);
+      D('I BUILT IT WITH FABLE 5.2.', 540, 170, 78, '#fff', 'center', 1000); D('IT PLAYED ITSELF UNTIL IT WAS FAIR.', 540, 256, 78, '#ffe27a', 'center', 1000);
+      D(FIRST.metrics.inBand + ' OF 8  →  ' + LAST.metrics.inBand + ' OF 8', 540, 520, 130, '#5df2a0', 'center', 1000); F('stages where 60–80% of mid-skill bots finish', 540, 572, 30, '#c9cdf5', 'center', 500);
+      D(H.totals.botRuns.toLocaleString('en') + ' BOT RUNS · ' + N + ' VERSIONS', 540, 760, 76, '#fff', 'center', 1000);
+      F('Bots are scripts with noise. No human playtest yet.', 540, 1020, 26, '#7d83b0', 'center', 500);
     }
   }
   window.__post = { total: TOTAL, fps: FPS, frame(f) { setup(f); step(); draw(f); return f + 1 < TOTAL; } };
