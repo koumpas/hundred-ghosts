@@ -3,7 +3,7 @@
 // so that any old version can be replayed with the same seed.
 (function (root) {
 'use strict';
-const VERSION = 5;
+const VERSION = 6;
 const T = 32, ROWS = 17, LIMIT = 2700; // tile px, rows, stage time limit in frames (45 s at 60 Hz)
 const PH = { w: 18, h: 26, runMax: 4, accG: 0.6, accA: 0.4, fric: 0.5, airFric: 0.12,
   grav: 0.55, jumpV: 10.2, cutV: 3.5, maxFall: 12, coyote: 6, buffer: 6, padV: 15, crumble: 24 };
@@ -46,32 +46,32 @@ function build(name, hue, fn) {
 const STAGES = [
   build('First Steps', 222, b => {
     b.run(10); b.gap(2); b.run(6); b.gap(3); b.run(5); b.up(1); b.run(5); b.up(1); b.run(4); b.down(2); b.run(4);
-    b.spikes(1); b.run(5); b.gap(3); b.run(4); b.spikes(2); b.run(6); b.up(2); b.run(3); b.gap(3); b.down(2); b.run(4); b.goal();
+    b.spikes(2); b.run(5); b.gap(4); b.run(4); b.spikes(2); b.run(6); b.up(2); b.run(3); b.gap(3); b.down(2); b.run(4); b.goal();
   }),
   build('Spike Garden', 280, b => {
-    b.run(8); b.spikes(2); b.run(6); b.spikes(3); b.run(5); b.up(1); b.run(4); b.spikes(2); b.run(3); b.gap(3); b.run(3);
+    b.run(8); b.spikes(2); b.run(6); b.spikes(2); b.run(5); b.up(1); b.run(4); b.spikes(2); b.run(3); b.gap(3); b.run(3);
     b.spikes(1); b.run(4); b.spikes(1); b.run(4); b.spikes(1); b.run(4); b.down(1); b.run(3);
     b.ceil(6, 3); b.run(2); b.spikes(1); b.run(3); b.run(4); b.up(2); b.run(4); b.spikes(3); b.run(3); b.gap(4); b.down(1); b.run(3); b.spikes(2); b.run(3); b.goal();
   }),
   build('Saw Mill', 22, b => {
-    b.run(8); b.saw({ dy: 0.6, ay: -3, period: 150 }); b.run(6); b.saw({ dy: 0.5, ax: 5, period: 160 }); b.run(8); b.gap(3); b.run(4);
-    b.saw({ dx: 1, dy: 1, ay: -3.5, period: 150 }); b.gap(3); b.run(5); b.up(1);
+    b.run(8); b.saw({ dy: 0.6, ay: -3, period: 150 }); b.run(6); b.saw({ dy: 0.5, ax: 5, period: 220 }); b.run(8); b.gap(3); b.run(4);
+    b.saw({ dx: 1, dy: 2, ay: -3, period: 180 }); b.gap(3); b.run(5); b.up(1);
     b.saw({ dx: 2, dy: 0.6, ay: -3, period: 150 }); b.saw({ dx: 7, dy: 0.6, ay: -3, period: 150, phase: 75 }); b.run(10);
-    b.saw({ dx: 3, dy: 1.5, orbit: 2, period: 140 }); b.run(8); b.gap(4); b.run(3); b.saw({ dy: 0.5, ax: 4, period: 120 }); b.run(7); b.goal();
+    b.saw({ dx: 3, dy: 1.5, orbit: 2, period: 140 }); b.run(8); b.gap(4); b.run(3); b.saw({ dy: 0.5, ax: 4, period: 180 }); b.run(7); b.goal();
   }),
   build('Ferry Lines', 190, b => {
     b.run(8); b.plat({ dx: 0.5, w: 4, ax: 4, period: 200 }); b.gap(9); b.run(5);
     b.plat({ dx: 0.5, w: 3, ay: -5, period: 220 }); b.gap(4); b.up(5); b.run(6); b.gap(3); b.down(5); b.run(4);
-    b.plat({ dx: 0.5, w: 3, ax: 3, period: 160 }); b.plat({ dx: 7, w: 3, ax: 3.5, period: 160, phase: 80 }); b.gap(14); b.run(5);
-    b.plat({ dx: 0.5, w: 3, ax: 6, period: 240 }); b.saw({ dx: 5, dy: 0.5, ay: -4, period: 180 }); b.gap(10); b.run(4); b.goal();
+    b.plat({ dx: 0.5, w: 3, ax: 3, period: 160 }); b.plat({ dx: 6.5, w: 3, ax: 4, period: 160, phase: 80 }); b.gap(14); b.run(5);
+    b.plat({ dx: 0.5, w: 3, ax: 6, period: 240 }); b.saw({ dx: 5, dy: 0.5, ay: -4, period: 240 }); b.gap(10); b.run(4); b.goal();
   }),
   build('Crumble Bridge', 36, b => {
     b.run(8); b.crumble(5); b.run(3); b.crumble(3); b.gap(2); b.crumble(3); b.run(3); b.up(1); b.crumble(4); b.gap(3); b.crumble(2); b.gap(3); b.crumble(2); b.run(4);
     b.saw({ dx: 1, dy: 0.5, ax: 4, period: 140 }); b.crumble(6); b.run(4); b.down(1); b.crumble(1); b.gap(2); b.crumble(1); b.gap(2); b.crumble(1); b.gap(2); b.run(4); b.goal();
   }),
   build('Spring Loaded', 130, b => {
-    b.run(8); b.pad(); b.up(5); b.run(4); b.down(3); b.run(5); b.pad(); b.gap(5); b.run(4); b.pad(); b.spikes(5); b.run(4);
-    b.up(2); b.run(3); b.pad(); b.gap(5); b.pad(); b.gap(5); b.run(5); b.pad(); b.up(5); b.run(4); b.goal();
+    b.run(8); b.pad(); b.up(5); b.run(4); b.down(3); b.run(5); b.pad(); b.gap(5); b.run(4); b.pad(); b.spikes(6); b.run(4);
+    b.up(2); b.run(3); b.saw({ dx: 3.5, dy: 3, ay: -3, period: 120 }); b.pad(); b.gap(5); b.pad(); b.gap(5); b.run(5); b.pad(); b.up(5); b.run(4); b.goal();
   }),
   build('Laser Gate', 320, b => {
     b.run(8); b.laser(); b.run(6); b.laser({ phase: 60 }); b.run(3); b.laser({ phase: 40 }); b.run(3); b.laser({ phase: 80 }); b.run(6); b.gap(3); b.run(2);
@@ -82,7 +82,7 @@ const STAGES = [
   build('Gauntlet', 0, b => {
     b.run(6); b.spikes(2); b.run(3); b.gap(3); b.run(2); b.saw({ dx: 2, dy: 0.6, ay: -3, period: 100 }); b.run(5); b.crumble(4);
     b.plat({ dx: 0.5, w: 3, ax: 4, period: 180 }); b.gap(8); b.run(3); b.laser(); b.run(3); b.pad(); b.up(4); b.run(5); b.spikes(1); b.run(2); b.gap(4); b.down(2); b.run(3);
-    b.crumble(2); b.gap(2); b.crumble(2); b.run(3); b.laser({ period: 90, on: 45 }); b.run(4); b.saw({ dy: 0.5, ax: 4, period: 180 }); b.run(6); b.spikes(2); b.run(3);
+    b.crumble(2); b.gap(2); b.crumble(2); b.run(5); b.laser({ period: 120, on: 50 }); b.run(4); b.saw({ dx: 2, dy: 0.6, ay: -3, period: 150 }); b.run(6); b.spikes(2); b.run(3);
     b.plat({ dx: 0.5, w: 3, ay: -4, period: 200 }); b.gap(4); b.up(4); b.run(3); b.laser(); b.run(2); b.goal();
   }),
 ];
