@@ -2,6 +2,8 @@
 
 An original browser obstacle-course platformer that tests itself with 100 scripted ghost bots, and a record of how it was fixed from v1 to v12.
 
+Play it: https://hundred-ghosts.vercel.app · History viewer: https://hundred-ghosts.vercel.app/viewer.html
+
 All numbers in this file come from `log/*.json` and `git`. `tools/export.mjs` and `tools/verify.mjs` make them again.
 
 ## How to run
