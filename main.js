@@ -117,7 +117,7 @@ function updateReplay() {
 function drawReplay() {
   P.views[0].draw(ctx, 0, 0, LW, 269, { versionLabel: P.ver[0], accent: '#ff8fa0' }); P.views[1].draw(ctx, 0, 271, LW, 269, { versionLabel: P.ver[1], accent: '#5df2a0' });
   ctx.fillStyle = '#fff'; ctx.fillRect(0, 269, LW, 2);
-  panel(ctx, 330, 256, 300, 28, 0.95); text(ctx, 'SAME SEED ' + SEED + ' · SAME 100 BOTS' + (SPEED !== 1 ? ' · ×' + SPEED + ' speed' : ''), 480, 275, 12, '#ffe27a', 'center', 800);
+  panel(ctx, 290, 256, 380, 28, 0.95); text(ctx, 'SAME SEED ' + SEED + ' · SAME 100 BOT SKILL PROFILES' + (SPEED !== 1 ? ' · ×' + SPEED + ' speed' : ''), 480, 275, 12, '#ffe27a', 'center', 800);
 }
 
 // ---------- review sheet: 6 frames of one bot's run, for the playtester panel ----------

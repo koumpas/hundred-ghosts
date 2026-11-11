@@ -1,0 +1,1761 @@
+{
+ "exportedAt": "2026-11-11T07:06:19.637Z",
+ "stageNames": [
+  "First Steps",
+  "Spike Garden",
+  "Saw Mill",
+  "Ferry Lines",
+  "Crumble Bridge",
+  "Spring Loaded",
+  "Laser Gate",
+  "Gauntlet"
+ ],
+ "versions": [
+  {
+   "version": 1,
+   "git": {
+    "hash": "13624f3",
+    "date": "2026-11-10T22:35:18-08:00",
+    "subject": "v1: first playable build, not yet measured",
+    "body": "8 stages, deterministic 60 Hz physics, human play (keyboard + touch),\nswarm mode with 100 scripted ghost bots, replay mode, headless harness.\nStage layouts are a first design from the jump numbers on paper\n(flat jump about 148 px, jump height about 94 px, pad height about 204 px).\nNo swarm run was made on the 8 stages before this commit; the bot script\nwas developed only on the separate \"Bot Gym\" track.",
+    "simDiff": [],
+    "filesChanged": 0,
+    "insertions": 0,
+    "deletions": 0
+   },
+   "reviews": [
+    {
+     "persona": "casual",
+     "score": 3.7,
+     "stageScores": [
+      7,
+      1,
+      5,
+      4,
+      8,
+      2,
+      4,
+      2
+     ],
+     "review": "I like the look: the glowing ghost, a new colour for each stage, and hazards I can read at once. First Steps is a gentle start and Crumble Bridge felt fair and tense. But Spike Garden comes second and I stood in front of a spike for 45 seconds with no way forward; 98 of 100 players failed. Spring Loaded stuck me beside a spring in the same way. Laser Gate killed me in two seconds, before I learned the rhythm. Ferry Lines dropped me in a pit while I waited for a platform. Gauntlet is a wall. I would stop playing at stage 2.",
+     "best": "Crumble Bridge: clear, tense, and I can finish it.",
+     "worst": "Spike Garden at stage 2 leaves almost every player stuck with no way forward."
+    },
+    {
+     "persona": "designer",
+     "score": 3.6,
+     "stageScores": [
+      7,
+      1,
+      5,
+      5,
+      8,
+      2,
+      5,
+      2
+     ],
+     "review": "I see no difficulty curve here. First Steps teaches gaps and spikes cleanly, then Spike Garden stops everyone: ghosts stand in front of a spike cluster for 45 seconds and only 2 of 100 finish. Crumble Bridge is the one tuned stage, with readable tiles and one saw, but it is easier than Saw Mill and Ferry Lines before it. Spring Loaded is inverted: the low-skill player finishes while better players stall beside the first spring. Laser Gate kills at two seconds with four beams and a faint telegraph. Gauntlet tests springs and lasers together that were never taught; 3 of 100 finish.",
+     "best": "Crumble Bridge: a readable new mechanic, one saw as a twist, and an 80% pass rate with deaths that look like the player's fault.",
+     "worst": "Spike Garden: stage 2 is a wall that no skill level gets past, so most players never see the remaining six stages."
+    },
+    {
+     "persona": "speedrunner",
+     "score": 3.9,
+     "stageScores": [
+      5,
+      1,
+      6,
+      6,
+      8,
+      2,
+      5,
+      2
+     ],
+     "review": "I want tight, fair routes, and half of this build does not give me one. Spike Garden is broken: the mid player stands beside a spike for 45 seconds and 98 of 100 ghosts fail. Spring Loaded is upside down: the weak player finishes while the strong ones stall before the second spring. Gauntlet stops nearly everybody at the laser-plus-spring chokepoint, so the finale has no flow. Laser Gate kills at two seconds, before I can read the cycle. Saw Mill and Ferry Lines are honest skill checks, and Crumble Bridge is the one stage I would grind for time. First Steps is safe but flat.",
+     "best": "Crumble Bridge keeps me moving with a real penalty for hesitation and a clear, fast line to the goal.",
+     "worst": "Spike Garden and Spring Loaded stall skilled players with no way forward, which is a route defect and not a challenge."
+    }
+   ],
+   "panelScore": 3.73,
+   "metrics": {
+    "inBand": 1,
+    "botRuns": 4000,
+    "mid": [
+     92.7,
+     0,
+     37.3,
+     40.7,
+     77.3,
+     35.3,
+     43.3,
+     6
+    ],
+    "pass": [
+     88.2,
+     4,
+     42.2,
+     46.2,
+     76.4,
+     24.4,
+     41.8,
+     6.8
+    ],
+    "timeouts": 1065,
+    "deaths": 2350,
+    "findings": 24,
+    "frameTime": {
+     "note": "swarm mode, 100 bots, speed 1, headless Chromium on the build machine",
+     "frames": 1440,
+     "cpuMedianMs": 0.6,
+     "cpuP95Ms": 1,
+     "cpuMaxMs": 2.4,
+     "rafMedianMs": 16.7,
+     "rafP95Ms": 16.8
+    }
+   },
+   "lines": [
+    "[v1] swarm run: seeds 101,202,303,404,505 · 100 bots · 8 stages · 4000 bot runs",
+    "[v1] stage 1 First Steps: pass 441/500 (88.2%) · low 74.9 mid 92.7 high 97.7 · deaths pit 18, spike 33, timeout 8 · stuck 8 embedded 0 fall-through 0 · top death spot: tile 38 spike ×19",
+    "[v1] stage 2 Spike Garden: pass 20/500 (4%) · low 0 mid 0 high 11.4 · deaths spike 102, pit 3, timeout 375 · stuck 375 embedded 0 fall-through 0 · top death spot: tile 35 timeout ×133",
+    "[v1] stage 3 Saw Mill: pass 211/500 (42.2%) · low 19.4 mid 37.3 high 69.1 · deaths saw 276, pit 13 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 8 saw ×62",
+    "[v1] stage 4 Ferry Lines: pass 231/500 (46.2%) · low 12 mid 40.7 high 85.1 · deaths pit 249, saw 20 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 11 pit ×40",
+    "[v1] stage 5 Crumble Bridge: pass 382/500 (76.4%) · low 60 mid 77.3 high 92 · deaths pit 67, saw 48, timeout 3 · stuck 3 embedded 0 fall-through 0 · top death spot: tile 61 pit ×32",
+    "[v1] stage 6 Spring Loaded: pass 122/500 (24.4%) · low 29.1 mid 35.3 high 10.3 · deaths timeout 378 · stuck 378 embedded 0 fall-through 0 · top death spot: tile 16 timeout ×256",
+    "[v1] stage 7 Laser Gate: pass 209/500 (41.8%) · low 11.4 mid 43.3 high 70.9 · deaths laser 198, pit 2, spike 9, saw 15, timeout 67 · stuck 67 embedded 0 fall-through 0 · top death spot: tile 14 laser ×146",
+    "[v1] stage 8 Gauntlet: pass 34/500 (6.8%) · low 1.1 mid 6 high 13.1 · deaths spike 12, saw 31, pit 170, laser 19, timeout 234 · stuck 234 embedded 0 fall-through 0 · top death spot: tile 37 timeout ×110",
+    "[v1] FINDING stage 1 [too-easy]: mid-skill pass 92.7% > 80%",
+    "[v1] FINDING stage 1 [stuck]: 8 bots stuck (no progress for 8 s)",
+    "[v1] FINDING stage 1 [timeout]: 8 bots hit the 45 s limit",
+    "[v1] FINDING stage 2 [too-hard]: mid-skill pass 0% < 60%",
+    "[v1] FINDING stage 2 [stuck]: 375 bots stuck (no progress for 8 s)",
+    "[v1] FINDING stage 2 [timeout]: 375 bots hit the 45 s limit",
+    "[v1] FINDING stage 2 [high-skill-fail]: high-skill pass only 11.4%",
+    "[v1] FINDING stage 3 [too-hard]: mid-skill pass 37.3% < 60%",
+    "[v1] FINDING stage 3 [high-skill-fail]: high-skill pass only 69.1%",
+    "[v1] FINDING stage 4 [too-hard]: mid-skill pass 40.7% < 60%",
+    "[v1] FINDING stage 5 [stuck]: 3 bots stuck (no progress for 8 s)",
+    "[v1] FINDING stage 5 [timeout]: 3 bots hit the 45 s limit",
+    "[v1] FINDING stage 6 [too-hard]: mid-skill pass 35.3% < 60%",
+    "[v1] FINDING stage 6 [stuck]: 378 bots stuck (no progress for 8 s)",
+    "[v1] FINDING stage 6 [timeout]: 378 bots hit the 45 s limit",
+    "[v1] FINDING stage 6 [high-skill-fail]: high-skill pass only 10.3%",
+    "[v1] FINDING stage 7 [too-hard]: mid-skill pass 43.3% < 60%",
+    "[v1] FINDING stage 7 [stuck]: 67 bots stuck (no progress for 8 s)",
+    "[v1] FINDING stage 7 [timeout]: 67 bots hit the 45 s limit",
+    "[v1] FINDING stage 7 [high-skill-fail]: high-skill pass only 70.9%",
+    "[v1] FINDING stage 8 [too-hard]: mid-skill pass 6% < 60%",
+    "[v1] FINDING stage 8 [stuck]: 234 bots stuck (no progress for 8 s)",
+    "[v1] FINDING stage 8 [timeout]: 234 bots hit the 45 s limit",
+    "[v1] FINDING stage 8 [high-skill-fail]: high-skill pass only 13.1%",
+    "[v1] stages in the 60–80% mid-skill band: 1/8",
+    "[v1] frame time (update+draw, 1440 frames): median 0.6 ms · p95 1 ms · max 2.4 ms · rAF interval median 16.7 ms"
+   ]
+  },
+  {
+   "version": 2,
+   "git": {
+    "hash": "6ecc3e5",
+    "date": "2026-11-10T22:39:24-08:00",
+    "subject": "v2: bot script fix (no stage change): stuck bots 1065 -> measured again",
+    "body": "Measurement (v1, 4000 bot runs): 1065 bots stuck or timed out. Traces show\nthat part of this is the bot script, not the game:\n- stage 7: bots stopped before laser 2 (tile 14.5) for 45 s. The script could\n  only \"run 2 decisions ahead\" or \"wait\"; it could not take a few steps and\n  stop between two lasers that are 96 px apart.\n- stages 2 and 8: bots stopped with no run-up and never went back.\nChange: the bot script gets 3 basic human actions: \"step forward and stop\",\na medium jump hold (12 frames), and \"go back about 3 tiles after 5 s with no\nprogress\". Physics and all 8 stages are the same as v1.\nNote: from v2 the bots are not the same script as in v1. Skill and risk\nvalues per bot and all seeds are the same.",
+    "simDiff": [
+     {
+      "hunk": "-201,2 +201,2",
+      "del": "function planInput(pl, t) { DIR = pl.dir; const JUMP_D = [0, 2, 4, 7, 10, 14, 19, 25], JUMP_HOLD = [6, 22]",
+      "add": "function planInput(pl, t) { DIR = pl.stop && t >= pl.stop ? 0 : pl.dir; const JUMP_D = [0, 2, 4, 7, 10, 14, 19, 25], JUMP_HOLD = [6, 12, 22]"
+     },
+     {
+      "hunk": "-215 +215",
+      "del": "return p.x - PH.runMax * f - (isJump ? 8 : 0) - (pl.dir !== 1 ? 60 : p.vx === 0 ? 100 : 0)",
+      "add": "return p.x - PH.runMax * f - (isJump ? 8 : 0) - (pl.dir !== 1 ? 60 : pl.stop ? 30 : p.vx === 0 ? 100 : 0)"
+     },
+     {
+      "hunk": "-236,0 +237,6",
+      "del": "",
+      "add": "if (!air) { // v2: \"take a few steps and stop\" (a human does this between two hazards); cands.push({ dir: 1, js: -1, he: -1, len: P + 10, stop: t + P }); cands.push({ dir: 1, js: -1, he: -1, len: 2 * P + 10, stop: t + 2 * P }); // v2: no progress for 5 s -> go back about 3 tiles and try again with a run-up; if (t - b.at > 300) { const back = { dir: -1, js: -1, he: -1, len: 40 }; b.at = t; if (roll"
+     },
+     {
+      "hunk": "-241 +247",
+      "del": "for (const j of [i - 2, i + 2]) { const o = cands[j]",
+      "add": "for (const j of [i - JUMP_HOLD.length, i + JUMP_HOLD.length]) { const o = cands[j]"
+     },
+     {
+      "hunk": "-254 +260",
+      "del": "const pl = { dir: pick.dir, js: pick.js, he: pick.he, len: pick.len }",
+      "add": "const pl = { dir: pick.dir, js: pick.js, he: pick.he, len: pick.len, stop: pick.stop || 0 }"
+     }
+    ],
+    "filesChanged": 4,
+    "insertions": 42,
+    "deletions": 6
+   },
+   "reviews": [
+    {
+     "persona": "casual",
+     "score": 3.9,
+     "stageScores": [
+      5,
+      1,
+      5,
+      3,
+      8,
+      7,
+      4,
+      2
+     ],
+     "review": "The game looks good: the glowing ghost, the clear red spikes and a new colour for each stage are easy to read on a small screen. But I got stuck too much. In First Steps the mid player stood in front of two spike clusters for 45 seconds, and in Spike Garden nobody got past them at all; I would close the tab there. Ferry Lines and Gauntlet drop almost everyone into pits, and Laser Gate killed the run after 2 seconds. Crumble Bridge and Spring Loaded are the only stages that feel fair and fun. The difficulty jumps up and down with no curve.",
+     "best": "Crumble Bridge is quick, readable and fair, with a real risk but a finish most players reach.",
+     "worst": "Spike Garden is stage 2 and nearly nobody can finish it; players just stand at the spikes until the timer ends."
+    },
+    {
+     "persona": "designer",
+     "score": 3.9,
+     "stageScores": [
+      6,
+      1,
+      4,
+      3,
+      7,
+      7,
+      5,
+      2
+     ],
+     "review": "I see no difficulty curve, only a sawtooth. First Steps is a fair opener, but my mid-skill run stood in front of a double spike for 45 seconds. Spike Garden is broken: 0% mid-skill pass and even the expert gave up, at stage 2. Saw Mill and Ferry Lines test moving saws and ferries at 27% and 13% before they teach them. Crumble Bridge and Spring Loaded are the only well-tuned stages, with readable hazards and one clear idea each. Laser Gate kills at 2 seconds with no safe first gate. Gauntlet mixes all mechanics, but 10% pass and a stuck expert make it a wall.",
+     "best": "Spring Loaded and Crumble Bridge each teach one mechanic clearly and land in the target pass band.",
+     "worst": "Spike Garden at stage 2 cannot be finished by any of the three recorded players, which blocks the whole game."
+    },
+    {
+     "persona": "speedrunner",
+     "score": 4.7,
+     "stageScores": [
+      5,
+      1,
+      7,
+      6,
+      7,
+      6,
+      7,
+      3
+     ],
+     "review": "I like the 10-second routes in Saw Mill and Crumble Bridge: moving saws and crumbling tiles reward a committed line, and Laser Gate has readable telegraphs with real timing risk. But the curve is broken. Spike Garden is stage 2 and stops 90 of 100 ghosts; the mid player stands in front of a double spike row for 45 seconds, and the same freeze appears in First Steps. Ferry Lines drops 87% of mid players into pits, too harsh for stage 4. Gauntlet kills almost everyone at one spring near 35% and even the expert gives up. Spring Loaded is safe but slow.",
+     "best": "Saw Mill and Crumble Bridge give a fast, readable sub-10-second line with real risk.",
+     "worst": "Spike Garden at stage 2 is a wall that even the high-skill player cannot pass."
+    }
+   ],
+   "panelScore": 4.17,
+   "metrics": {
+    "inBand": 1,
+    "botRuns": 4000,
+    "mid": [
+     86.7,
+     0.7,
+     28,
+     22,
+     76.7,
+     84,
+     57.3,
+     5.3
+    ],
+    "pass": [
+     85,
+     7.4,
+     37.2,
+     35.2,
+     73.8,
+     75.4,
+     54.2,
+     7.4
+    ],
+    "timeouts": 627,
+    "deaths": 2122,
+    "findings": 17,
+    "frameTime": {
+     "note": "swarm mode, 100 bots, speed 1, headless Chromium on the build machine",
+     "frames": 1440,
+     "cpuMedianMs": 0.4,
+     "cpuP95Ms": 0.8,
+     "cpuMaxMs": 1.6,
+     "rafMedianMs": 16.7,
+     "rafP95Ms": 16.8
+    }
+   },
+   "lines": [
+    "[v2] swarm run: seeds 101,202,303,404,505 · 100 bots · 8 stages · 4000 bot runs",
+    "[v2] stage 1 First Steps: pass 425/500 (85%) · low 69.1 mid 86.7 high 99.4 · deaths pit 30, spike 36, timeout 9 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 38 spike ×20",
+    "[v2] stage 2 Spike Garden: pass 37/500 (7.4%) · low 0 mid 0.7 high 20.6 · deaths spike 120, pit 3, timeout 340 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 35 timeout ×123",
+    "[v2] stage 3 Saw Mill: pass 186/500 (37.2%) · low 12 mid 28 high 70.3 · deaths saw 295, pit 19 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 8 saw ×65",
+    "[v2] stage 4 Ferry Lines: pass 176/500 (35.2%) · low 8.6 mid 22 high 73.1 · deaths pit 305, saw 19 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 11 pit ×50",
+    "[v2] stage 5 Crumble Bridge: pass 369/500 (73.8%) · low 48 mid 76.7 high 97.1 · deaths pit 80, saw 47, timeout 4 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 61 pit ×21",
+    "[v2] stage 6 Spring Loaded: pass 377/500 (75.4%) · low 92.6 mid 84 high 50.9 · deaths timeout 123 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 17 timeout ×74",
+    "[v2] stage 7 Laser Gate: pass 271/500 (54.2%) · low 28 mid 57.3 high 77.7 · deaths laser 170, pit 15, spike 19, saw 25 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 14 laser ×117",
+    "[v2] stage 8 Gauntlet: pass 37/500 (7.4%) · low 5.1 mid 5.3 high 11.4 · deaths spike 34, saw 47, pit 187, laser 44, timeout 151 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 38 timeout ×105",
+    "[v2] FINDING stage 1 [too-easy]: mid-skill pass 86.7% > 80%",
+    "[v2] FINDING stage 1 [timeout]: 9 bots hit the 45 s limit",
+    "[v2] FINDING stage 2 [too-hard]: mid-skill pass 0.7% < 60%",
+    "[v2] FINDING stage 2 [timeout]: 340 bots hit the 45 s limit",
+    "[v2] FINDING stage 2 [high-skill-fail]: high-skill pass only 20.6%",
+    "[v2] FINDING stage 3 [too-hard]: mid-skill pass 28% < 60%",
+    "[v2] FINDING stage 3 [high-skill-fail]: high-skill pass only 70.3%",
+    "[v2] FINDING stage 4 [too-hard]: mid-skill pass 22% < 60%",
+    "[v2] FINDING stage 4 [high-skill-fail]: high-skill pass only 73.1%",
+    "[v2] FINDING stage 5 [timeout]: 4 bots hit the 45 s limit",
+    "[v2] FINDING stage 6 [too-easy]: mid-skill pass 84% > 80%",
+    "[v2] FINDING stage 6 [timeout]: 123 bots hit the 45 s limit",
+    "[v2] FINDING stage 6 [high-skill-fail]: high-skill pass only 50.9%",
+    "[v2] FINDING stage 7 [too-hard]: mid-skill pass 57.3% < 60%",
+    "[v2] FINDING stage 8 [too-hard]: mid-skill pass 5.3% < 60%",
+    "[v2] FINDING stage 8 [timeout]: 151 bots hit the 45 s limit",
+    "[v2] FINDING stage 8 [high-skill-fail]: high-skill pass only 11.4%",
+    "[v2] stages in the 60–80% mid-skill band: 1/8",
+    "[v2] frame time (update+draw, 1440 frames): median 0.4 ms · p95 0.8 ms · max 1.6 ms · rAF interval median 16.7 ms"
+   ]
+  },
+  {
+   "version": 3,
+   "git": {
+    "hash": "cd8d5f0",
+    "date": "2026-11-10T22:42:18-08:00",
+    "subject": "v3: remove 3 places with no safe action (stages 2, 6, 8)",
+    "body": "Measurement (v2): 627 timeouts in 4000 bot runs; careful bots stop and wait.\n- stage 2, tile 35 (123 timeouts, 85 of them high-skill): single spikes with\n  2 clear tiles (64 px) between them. From a stop there, only a 6-frame hop\n  on 1 exact frame lands between the spikes; a full jump (132-148 px)\n  lands on the next spike. Clear run between single spikes set 2 -> 4 tiles.\n- stage 2, tiles 13-19: landing zones before spikes(3) and before the step\n  were 4, 3 and 2 tiles. Set to 6, 5 and 4 tiles.\n- stage 6, tile 17 (74 timeouts; high-skill pass 50.9% < low-skill 92.6%):\n  pad flight is about 218 px, the gap is 192 px plus up to 32 px of pad\n  tile: margin -6..+26 px. Gap set 6 -> 5 tiles (160 px).\n- stage 8, tile 38 (105 timeouts): pad launch up a 4-tile wall, then a\n  spike 3 tiles after the edge, not visible from below. Spike moved to\n  5 tiles after the edge.",
+    "simDiff": [
+     {
+      "hunk": "-52,2 +52,2",
+      "del": "b.run(2); b.run(2); b.run(2); b.run(3)",
+      "add": "b.run(6); b.run(5); b.run(4); b.run(4)"
+     },
+     {
+      "hunk": "-73 +73",
+      "del": "b.gap(6)",
+      "add": "b.gap(5)"
+     },
+     {
+      "hunk": "-84 +84",
+      "del": "b.run(3)",
+      "add": "b.run(5)"
+     }
+    ],
+    "filesChanged": 3,
+    "insertions": 16,
+    "deletions": 5
+   },
+   "reviews": [
+    {
+     "persona": "casual",
+     "score": 4.2,
+     "stageScores": [
+      5,
+      2,
+      4,
+      3,
+      8,
+      5,
+      5,
+      3
+     ],
+     "review": "I like the look: glowing ghost, a different colour for each stage, hazards I can read at once. But I got stuck too much. In First Steps my run stood in front of two small spike rows for 45 seconds, and in Spike Garden even the expert gave up at a wall. That is not fun in a five-minute break. Saw Mill killed me at the first saw, Ferry Lines dropped me in pits, and Laser Gate killed me in two seconds. Crumble Bridge felt fair and tense. Spring Loaded was pretty but nobody died. Gauntlet is too hard for me.",
+     "best": "Crumble Bridge is clear, tense and fair, and most players finish it.",
+     "worst": "Spike Garden leaves even the high-skill player stuck at a wall until the timer ends."
+    },
+    {
+     "persona": "designer",
+     "score": 4.2,
+     "stageScores": [
+      6,
+      2,
+      4,
+      3,
+      8,
+      4,
+      5,
+      5
+     ],
+     "review": "The curve is upside down. I see pass rates of 80, 30, 27, 13, 77, 100, 53 and 20 percent, so stages 2 to 4 are harder than stages 5 and 6. Spike Garden is the worst: mid and high players stand at a step with spikes on top and give up, which is a layout fault, not a skill test. First Steps also stalls a mid player in front of a small spike pair. Laser Gate kills at 18 percent after two seconds with no safe first laser. Spring Loaded has no risk at all. Crumble Bridge teaches, then tests, and reads well.",
+     "best": "Crumble Bridge introduces crumbling tiles on safe ground, adds one saw later, and lands in the target band.",
+     "worst": "Spike Garden stops even the high-skill player at a spiked step with no readable way forward."
+    },
+    {
+     "persona": "speedrunner",
+     "score": 4.6,
+     "stageScores": [
+      5,
+      2,
+      6,
+      6,
+      7,
+      3,
+      6,
+      5
+     ],
+     "review": "I like the bones: Crumble Bridge has real flow, and Saw Mill and Ferry Lines ask for timing I could route. But the curve is broken. Spike Garden stalls even the high-skill run at a step crowned with spikes, and 70 of 100 ghosts die there, which reads as a layout fault, not my error. First Steps has a mid player stuck 45 seconds beside a small spike pair. Spring Loaded is the opposite: 100 of 100 finish, zero risk, nothing to optimise. Laser Gate kills at 18% before I can read the cycle, and Gauntlet stacks a saw over a crumble gap too early.",
+     "best": "Crumble Bridge: readable, fast, and the 9.4 s line still has risk in it.",
+     "worst": "Spike Garden: the spiked step at about 60-70% stops even the high-skill player cold."
+    }
+   ],
+   "panelScore": 4.33,
+   "metrics": {
+    "inBand": 1,
+    "botRuns": 4000,
+    "mid": [
+     86.7,
+     21.3,
+     28,
+     22,
+     76.7,
+     100,
+     57.3,
+     16
+    ],
+    "pass": [
+     85,
+     25.2,
+     37.2,
+     35.2,
+     73.8,
+     100,
+     54.2,
+     27
+    ],
+    "timeouts": 168,
+    "deaths": 1812,
+    "findings": 15,
+    "frameTime": {
+     "note": "swarm mode, 100 bots, speed 1, headless Chromium on the build machine",
+     "frames": 1440,
+     "cpuMedianMs": 0.7,
+     "cpuP95Ms": 1.3,
+     "cpuMaxMs": 2.2,
+     "rafMedianMs": 16.7,
+     "rafP95Ms": 16.7
+    }
+   },
+   "lines": [
+    "[v3] swarm run: seeds 101,202,303,404,505 · 100 bots · 8 stages · 4000 bot runs",
+    "[v3] stage 1 First Steps: pass 425/500 (85%) · low 69.1 mid 86.7 high 99.4 · deaths pit 30, spike 36, timeout 9 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 38 spike ×20",
+    "[v3] stage 2 Spike Garden: pass 126/500 (25.2%) · low 4.6 mid 21.3 high 49.1 · deaths spike 219, pit 7, timeout 148 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 66 timeout ×82",
+    "[v3] stage 3 Saw Mill: pass 186/500 (37.2%) · low 12 mid 28 high 70.3 · deaths saw 295, pit 19 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 8 saw ×65",
+    "[v3] stage 4 Ferry Lines: pass 176/500 (35.2%) · low 8.6 mid 22 high 73.1 · deaths pit 305, saw 19 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 11 pit ×50",
+    "[v3] stage 5 Crumble Bridge: pass 369/500 (73.8%) · low 48 mid 76.7 high 97.1 · deaths pit 80, saw 47, timeout 4 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 61 pit ×21",
+    "[v3] stage 6 Spring Loaded: pass 500/500 (100%) · low 100 mid 100 high 100 · deaths none · stuck 0 embedded 0 fall-through 0",
+    "[v3] stage 7 Laser Gate: pass 271/500 (54.2%) · low 28 mid 57.3 high 77.7 · deaths laser 170, pit 15, spike 19, saw 25 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 14 laser ×117",
+    "[v3] stage 8 Gauntlet: pass 135/500 (27%) · low 5.1 mid 16 high 58.3 · deaths spike 44, saw 98, pit 188, laser 28, timeout 7 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 31 pit ×56",
+    "[v3] FINDING stage 1 [too-easy]: mid-skill pass 86.7% > 80%",
+    "[v3] FINDING stage 1 [timeout]: 9 bots hit the 45 s limit",
+    "[v3] FINDING stage 2 [too-hard]: mid-skill pass 21.3% < 60%",
+    "[v3] FINDING stage 2 [timeout]: 148 bots hit the 45 s limit",
+    "[v3] FINDING stage 2 [high-skill-fail]: high-skill pass only 49.1%",
+    "[v3] FINDING stage 3 [too-hard]: mid-skill pass 28% < 60%",
+    "[v3] FINDING stage 3 [high-skill-fail]: high-skill pass only 70.3%",
+    "[v3] FINDING stage 4 [too-hard]: mid-skill pass 22% < 60%",
+    "[v3] FINDING stage 4 [high-skill-fail]: high-skill pass only 73.1%",
+    "[v3] FINDING stage 5 [timeout]: 4 bots hit the 45 s limit",
+    "[v3] FINDING stage 6 [too-easy]: mid-skill pass 100% > 80%",
+    "[v3] FINDING stage 7 [too-hard]: mid-skill pass 57.3% < 60%",
+    "[v3] FINDING stage 8 [too-hard]: mid-skill pass 16% < 60%",
+    "[v3] FINDING stage 8 [timeout]: 7 bots hit the 45 s limit",
+    "[v3] FINDING stage 8 [high-skill-fail]: high-skill pass only 58.3%",
+    "[v3] stages in the 60–80% mid-skill band: 1/8",
+    "[v3] frame time (update+draw, 1440 frames): median 0.7 ms · p95 1.3 ms · max 2.2 ms · rAF interval median 16.7 ms"
+   ]
+  },
+  {
+   "version": 4,
+   "git": {
+    "hash": "f328102",
+    "date": "2026-11-10T22:44:09-08:00",
+    "subject": "v4: bot script fix 2 (no stage change): view lag no longer moves the platform under the bot",
+    "body": "Measurement (v3): stage 4 mid-skill pass 22.0%, 305 pit deaths. Traces show\nbots that ride a ferry and then step into the pit. Cause is in the bot\nscript: a bot plans with a late view of moving hazards (0-9 frames). The\nsame late time was used for the platform that carries the bot, so its plan\nstarted from a wrong own position.\nChange: plans use the real time for moving platforms; the late view stays\nfor saws and lasers. Test before commit on stage 4: mid 22.0% -> 45.3%.\nPhysics and stages are the same as v3. The bots differ from v3 in this\none point.",
+    "simDiff": [
+     {
+      "hunk": "-113 +113",
+      "del": "// (bots plan with th = t - lag, the game always calls it with th = t).",
+      "add": "// (bots plan with th = t - lag for saws and lasers; platforms use t since v4. The game calls it with th = t)."
+     },
+     {
+      "hunk": "-120 +120",
+      "del": "platPos(pl, th - 1); platPos(pl, th)",
+      "add": "platPos(pl, t - 1); platPos(pl, t)"
+     },
+     {
+      "hunk": "-160 +160",
+      "del": "platPos(pl, th)",
+      "add": "platPos(pl, t)"
+     },
+     {
+      "hunk": "-163 +163",
+      "del": "if (!ok) { platPos(pl, th - 1)",
+      "add": "if (!ok) { platPos(pl, t - 1)"
+     }
+    ],
+    "filesChanged": 1,
+    "insertions": 5,
+    "deletions": 5
+   },
+   "reviews": [
+    {
+     "persona": "casual",
+     "score": 4.5,
+     "stageScores": [
+      6,
+      2,
+      4,
+      5,
+      8,
+      5,
+      3,
+      4
+     ],
+     "review": "I like the look: glowing ghost, a new colour for each stage, hazards easy to see. But I got stuck too much. In First Steps my run stood in front of two spike clusters for 45 seconds, and in Spike Garden even the expert found no way forward. That is not fun in a five-minute break. Saw Mill kills beginners at 11% and Laser Gate killed me after two seconds, before I understood the blink timing. Crumble Bridge felt right, tense but fair. Spring Loaded is pretty but nobody died, so it has no thrill. Gauntlet is a wall of red at the laser and spikes.",
+     "best": "Crumble Bridge is clear, tense and fair, and most players finish it.",
+     "worst": "Spike Garden leaves even the high-skill player stuck with no way forward."
+    },
+    {
+     "persona": "designer",
+     "score": 4.6,
+     "stageScores": [
+      6,
+      3,
+      4,
+      5,
+      7,
+      3,
+      4,
+      5
+     ],
+     "review": "The curve is broken. Spike Garden is stage 2 but only 30% pass it, and even the high-skill run stalls below a spiked ledge with no readable route. Saw Mill at 27% is harder than Crumble Bridge at 77%, and Spring Loaded has zero deaths, so springs are never tested. Laser Gate kills two of three players at the first beam after two seconds; I see no safe place to learn the blink timing. First Steps and Crumble Bridge teach well. Gauntlet combines every mechanic, which I like, but 23% with one death cluster before the goal feels punishing. Screens are clear and hazards read well.",
+     "best": "Crumble Bridge introduces crumbling tiles on safe ground first and lands in the target band with readable deaths.",
+     "worst": "Spike Garden is a stage-2 wall where even the high-skill player finds no way forward."
+    },
+    {
+     "persona": "speedrunner",
+     "score": 5.3,
+     "stageScores": [
+      5,
+      2,
+      6,
+      7,
+      7,
+      3,
+      6,
+      7
+     ],
+     "review": "I like the bones: Ferry Lines, Crumble Bridge and Gauntlet give me real routing and timing, and the hazards read cleanly. But the curve is broken. Spike Garden is harder than the finale: my mid ghost stood at a ledge for 45 seconds and even the high-skill run gave up at 58%, so I cannot trust the stage. First Steps also stalls a player in front of a spike pair. Saw Mill at 27% is too sharp for stage 3. Spring Loaded is a free 9-second ride with zero deaths, no reason to optimise. Laser Gate kills at 18% in two seconds, which feels like a cycle lottery.",
+     "best": "Gauntlet and Ferry Lines mix hazards into a route that rewards clean timing.",
+     "worst": "Spike Garden stalls even the high-skill player at a ledge, so it looks unfinishable instead of hard."
+    }
+   ],
+   "panelScore": 4.8,
+   "metrics": {
+    "inBand": 1,
+    "botRuns": 4000,
+    "mid": [
+     86.7,
+     21.3,
+     28,
+     45.3,
+     76.7,
+     100,
+     57.3,
+     22.7
+    ],
+    "pass": [
+     85,
+     25.2,
+     37.2,
+     48.4,
+     73.8,
+     100,
+     54.2,
+     29.2
+    ],
+    "timeouts": 172,
+    "deaths": 1735,
+    "findings": 14,
+    "frameTime": {
+     "note": "swarm mode, 100 bots, speed 1, headless Chromium on the build machine",
+     "frames": 1440,
+     "cpuMedianMs": 0.5,
+     "cpuP95Ms": 1,
+     "cpuMaxMs": 1.8,
+     "rafMedianMs": 16.7,
+     "rafP95Ms": 16.8
+    }
+   },
+   "lines": [
+    "[v4] swarm run: seeds 101,202,303,404,505 · 100 bots · 8 stages · 4000 bot runs",
+    "[v4] stage 1 First Steps: pass 425/500 (85%) · low 69.1 mid 86.7 high 99.4 · deaths pit 30, spike 36, timeout 9 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 38 spike ×20",
+    "[v4] stage 2 Spike Garden: pass 126/500 (25.2%) · low 4.6 mid 21.3 high 49.1 · deaths spike 219, pit 7, timeout 148 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 66 timeout ×82",
+    "[v4] stage 3 Saw Mill: pass 186/500 (37.2%) · low 12 mid 28 high 70.3 · deaths saw 295, pit 19 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 8 saw ×65",
+    "[v4] stage 4 Ferry Lines: pass 242/500 (48.4%) · low 20.6 mid 45.3 high 78.9 · deaths pit 245, saw 13 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 11 pit ×48",
+    "[v4] stage 5 Crumble Bridge: pass 369/500 (73.8%) · low 48 mid 76.7 high 97.1 · deaths pit 80, saw 47, timeout 4 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 61 pit ×21",
+    "[v4] stage 6 Spring Loaded: pass 500/500 (100%) · low 100 mid 100 high 100 · deaths none · stuck 0 embedded 0 fall-through 0",
+    "[v4] stage 7 Laser Gate: pass 271/500 (54.2%) · low 28 mid 57.3 high 77.7 · deaths laser 170, pit 15, spike 19, saw 25 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 14 laser ×117",
+    "[v4] stage 8 Gauntlet: pass 146/500 (29.2%) · low 6.9 mid 22.7 high 57.1 · deaths spike 59, saw 140, pit 99, laser 45, timeout 11 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 68 saw ×59",
+    "[v4] FINDING stage 1 [too-easy]: mid-skill pass 86.7% > 80%",
+    "[v4] FINDING stage 1 [timeout]: 9 bots hit the 45 s limit",
+    "[v4] FINDING stage 2 [too-hard]: mid-skill pass 21.3% < 60%",
+    "[v4] FINDING stage 2 [timeout]: 148 bots hit the 45 s limit",
+    "[v4] FINDING stage 2 [high-skill-fail]: high-skill pass only 49.1%",
+    "[v4] FINDING stage 3 [too-hard]: mid-skill pass 28% < 60%",
+    "[v4] FINDING stage 3 [high-skill-fail]: high-skill pass only 70.3%",
+    "[v4] FINDING stage 4 [too-hard]: mid-skill pass 45.3% < 60%",
+    "[v4] FINDING stage 5 [timeout]: 4 bots hit the 45 s limit",
+    "[v4] FINDING stage 6 [too-easy]: mid-skill pass 100% > 80%",
+    "[v4] FINDING stage 7 [too-hard]: mid-skill pass 57.3% < 60%",
+    "[v4] FINDING stage 8 [too-hard]: mid-skill pass 22.7% < 60%",
+    "[v4] FINDING stage 8 [timeout]: 11 bots hit the 45 s limit",
+    "[v4] FINDING stage 8 [high-skill-fail]: high-skill pass only 57.1%",
+    "[v4] stages in the 60–80% mid-skill band: 1/8",
+    "[v4] frame time (update+draw, 1440 frames): median 0.5 ms · p95 1 ms · max 1.8 ms · rAF interval median 16.7 ms"
+   ]
+  },
+  {
+   "version": 5,
+   "git": {
+    "hash": "eb9f9af",
+    "date": "2026-11-10T22:45:58-08:00",
+    "subject": "v5: make the too-hard stages easier (2, 3, 4, 7, 8)",
+    "body": "Measurement (v4), mid-skill pass: stage 2 21.3%, stage 3 28.0%,\nstage 4 45.3%, stage 7 57.3%, stage 8 22.7% (target 60-80%).\n- stage 2: 82 timeouts at tile 66 (2-tile ledge, then 3 spikes, no run-up):\n  ledge 2 -> 4 tiles. 46 spike deaths under the low ceiling: 2 spikes -> 1.\n- stage 3: saw deaths at tiles 8 (65), 30 (45), 39-42: saw periods\n  100/90/110 -> 150 frames; the two bobbing saws 3 -> 5 tiles apart.\n- stage 4: 48 pit deaths at the first ferry: ferry 3 -> 4 tiles wide.\n  Twin ferries 2 -> 3 tiles wide. Saw on the last ferry line: period\n  120 -> 180 frames.\n- stage 7: 117 laser deaths at laser 2 (27 of them high-skill). It goes on\n  at frame 120, when a full-speed player gets there (frames 108-153).\n  Phase moved by 60 frames, so it is already on when the player comes.\n- stage 8: 139 deaths at tiles 64-69 (laser, then saw 2 tiles later, then\n  3 spikes): 4 tiles between laser and saw, saw period 120 -> 180,\n  spikes 3 -> 2. First ferry 2 -> 3 tiles wide.",
+    "simDiff": [
+     {
+      "hunk": "-54 +54",
+      "del": "b.run(2); b.run(2); b.spikes(2)",
+      "add": "b.spikes(1); b.run(4); b.run(3)"
+     },
+     {
+      "hunk": "-57,3 +57,3",
+      "del": "b.saw({ dy: 0.6, ay: -3, period: 100 }); b.saw({ dx: 1, dy: 1, ay: -3.5, period: 90 }); b.saw({ dx: 2, dy: 0.6, ay: -3, period: 110 }); b.saw({ dx: 5, dy: 0.6, ay: -3, period: 110, phase: 55 }); b.run(8)",
+      "add": "b.saw({ dy: 0.6, ay: -3, period: 150 }); b.saw({ dx: 1, dy: 1, ay: -3.5, period: 150 }); b.saw({ dx: 2, dy: 0.6, ay: -3, period: 150 }); b.saw({ dx: 7, dy: 0.6, ay: -3, period: 150, phase: 75 }); b.run(10)"
+     },
+     {
+      "hunk": "-63 +63",
+      "del": "b.plat({ dx: 0.5, w: 3, ax: 5, period: 200 })",
+      "add": "b.plat({ dx: 0.5, w: 4, ax: 4, period: 200 })"
+     },
+     {
+      "hunk": "-65,2 +65,2",
+      "del": "b.plat({ dx: 0.5, w: 2, ax: 4, period: 160 }); b.plat({ dx: 7, w: 2, ax: 4, period: 160, phase: 80 }); b.saw({ dx: 5, dy: 0.5, ay: -4, period: 120 })",
+      "add": "b.plat({ dx: 0.5, w: 3, ax: 3, period: 160 }); b.plat({ dx: 7, w: 3, ax: 3.5, period: 160, phase: 80 }); b.saw({ dx: 5, dy: 0.5, ay: -4, period: 180 })"
+     },
+     {
+      "hunk": "-77 +77",
+      "del": "b.laser()",
+      "add": "b.laser({ phase: 60 })"
+     },
+     {
+      "hunk": "-84,2 +84,2",
+      "del": "b.plat({ dx: 0.5, w: 2, ax: 5, period: 180 }); b.run(2); b.saw({ dy: 0.5, ax: 4, period: 120 }); b.spikes(3)",
+      "add": "b.plat({ dx: 0.5, w: 3, ax: 4, period: 180 }); b.run(4); b.saw({ dy: 0.5, ax: 4, period: 180 }); b.spikes(2)"
+     }
+    ],
+    "filesChanged": 1,
+    "insertions": 11,
+    "deletions": 11
+   },
+   "reviews": [
+    {
+     "persona": "casual",
+     "score": 5.4,
+     "stageScores": [
+      5,
+      6,
+      3,
+      6,
+      7,
+      5,
+      7,
+      4
+     ],
+     "review": "I like the look: each stage has its own colour, the ghost glows, and spikes, saws and lasers are easy to read. But First Steps left the mid player standing in front of a small spike patch for 45 seconds, and getting stuck on stage 1 would make me close the tab. Saw Mill killed a player after 2.1 seconds, which felt cheap for stage 3, and Gauntlet's laser wall at 67% stops most people. Crumble Bridge and Laser Gate felt fair and fun. Spring Loaded is pretty, but nobody died, so it had no tension. Ferry Lines has many pit deaths below the screen.",
+     "best": "Crumble Bridge and Laser Gate are clear, fair and have just enough danger.",
+     "worst": "Saw Mill kills you two seconds in, and First Steps can leave a player stuck in front of spikes on stage 1."
+    },
+    {
+     "persona": "designer",
+     "score": 5.4,
+     "stageScores": [
+      5,
+      6,
+      3,
+      6,
+      7,
+      4,
+      8,
+      5
+     ],
+     "review": "The curve is a zigzag, not a ramp. First Steps lets my mid-skill run stand in front of a spike pair for 45 seconds, which is a bad first lesson. Saw Mill kills at 2 seconds with two moving saws before it teaches one, and only 27% pass at stage 3. Spring Loaded then has zero deaths, so the springs carry no risk. Crumble Bridge and Laser Gate are the best: one mechanic, clear telegraph, readable deaths. Gauntlet mixes all mechanics well, but the laser at 67% stacks most deaths in one spot and reads as a timing trap.",
+     "best": "Laser Gate teaches the blinking beams on flat ground first and then adds spikes and a saw, with deaths spread out and readable.",
+     "worst": "Saw Mill is a stage 3 difficulty wall that kills a mid-skill player with a saw in the first two seconds."
+    },
+    {
+     "persona": "speedrunner",
+     "score": 5.5,
+     "stageScores": [
+      5,
+      7,
+      4,
+      6,
+      7,
+      2,
+      7,
+      5
+     ],
+     "review": "The curve is broken for me. Saw Mill is stage 3 and kills the mid player in 2.1 seconds with saws at jump height right off the spawn; 27% pass there is a wall, not a lesson. Then Spring Loaded is 100 of 100 with zero deaths, so it is a cutscene with no line to optimise. Gauntlet stacks one laser at 67% that eats most runs, which reads as a timing lottery. First Steps left a player frozen before a small spike for 45 seconds. Crumble Bridge and Laser Gate are the good ones: readable hazards, real risk, fast flow.",
+     "best": "Crumble Bridge and Laser Gate give fast, readable routes where a death is clearly my own mistake.",
+     "worst": "Spring Loaded has no risk at all, while Saw Mill at stage 3 kills in two seconds before I can read the saw cycle."
+    }
+   ],
+   "panelScore": 5.43,
+   "metrics": {
+    "inBand": 2,
+    "botRuns": 4000,
+    "mid": [
+     86.7,
+     52.7,
+     36,
+     53.3,
+     76.7,
+     100,
+     80,
+     34
+    ],
+    "pass": [
+     85,
+     53.4,
+     47.4,
+     53,
+     73.8,
+     100,
+     69.2,
+     38.4
+    ],
+    "timeouts": 56,
+    "deaths": 1399,
+    "findings": 11,
+    "frameTime": {
+     "note": "swarm mode, 100 bots, speed 1, headless Chromium on the build machine",
+     "frames": 1440,
+     "cpuMedianMs": 0.5,
+     "cpuP95Ms": 0.8,
+     "cpuMaxMs": 2.1,
+     "rafMedianMs": 16.7,
+     "rafP95Ms": 16.8
+    }
+   },
+   "lines": [
+    "[v5] swarm run: seeds 101,202,303,404,505 · 100 bots · 8 stages · 4000 bot runs",
+    "[v5] stage 1 First Steps: pass 425/500 (85%) · low 69.1 mid 86.7 high 99.4 · deaths pit 30, spike 36, timeout 9 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 38 spike ×20",
+    "[v5] stage 2 Spike Garden: pass 267/500 (53.4%) · low 19.4 mid 52.7 high 88 · deaths spike 192, pit 7, timeout 34 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 15 spike ×48",
+    "[v5] stage 3 Saw Mill: pass 237/500 (47.4%) · low 22.3 mid 36 high 82.3 · deaths saw 230, pit 33 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 30 saw ×35",
+    "[v5] stage 4 Ferry Lines: pass 265/500 (53%) · low 24 mid 53.3 high 81.7 · deaths pit 177, saw 58 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 64 saw ×40",
+    "[v5] stage 5 Crumble Bridge: pass 369/500 (73.8%) · low 48 mid 76.7 high 97.1 · deaths pit 80, saw 47, timeout 4 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 61 pit ×21",
+    "[v5] stage 6 Spring Loaded: pass 500/500 (100%) · low 100 mid 100 high 100 · deaths none · stuck 0 embedded 0 fall-through 0",
+    "[v5] stage 7 Laser Gate: pass 346/500 (69.2%) · low 33.1 mid 80 high 96 · deaths laser 80, pit 27, spike 22, saw 25 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 44 laser ×41",
+    "[v5] stage 8 Gauntlet: pass 192/500 (38.4%) · low 16 mid 34 high 64.6 · deaths spike 85, saw 98, laser 71, pit 45, timeout 9 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 64 laser ×62",
+    "[v5] FINDING stage 1 [too-easy]: mid-skill pass 86.7% > 80%",
+    "[v5] FINDING stage 1 [timeout]: 9 bots hit the 45 s limit",
+    "[v5] FINDING stage 2 [too-hard]: mid-skill pass 52.7% < 60%",
+    "[v5] FINDING stage 2 [timeout]: 34 bots hit the 45 s limit",
+    "[v5] FINDING stage 3 [too-hard]: mid-skill pass 36% < 60%",
+    "[v5] FINDING stage 4 [too-hard]: mid-skill pass 53.3% < 60%",
+    "[v5] FINDING stage 5 [timeout]: 4 bots hit the 45 s limit",
+    "[v5] FINDING stage 6 [too-easy]: mid-skill pass 100% > 80%",
+    "[v5] FINDING stage 8 [too-hard]: mid-skill pass 34% < 60%",
+    "[v5] FINDING stage 8 [timeout]: 9 bots hit the 45 s limit",
+    "[v5] FINDING stage 8 [high-skill-fail]: high-skill pass only 64.6%",
+    "[v5] stages in the 60–80% mid-skill band: 2/8",
+    "[v5] frame time (update+draw, 1440 frames): median 0.5 ms · p95 0.8 ms · max 2.1 ms · rAF interval median 16.7 ms"
+   ]
+  },
+  {
+   "version": 6,
+   "git": {
+    "hash": "c7f536e",
+    "date": "2026-11-10T22:47:39-08:00",
+    "subject": "v6: second balance pass; stages 1 and 6 made HARDER",
+    "body": "Measurement (v5), mid-skill pass: stage 1 86.7% and stage 6 100% (too\neasy); stage 2 52.7%, stage 3 36.0%, stage 4 53.3%, stage 8 34.0% (too hard).\nHarder:\n- stage 1: gap at tile 47 3 -> 4 tiles; single spike at tile 38 -> 2 spikes.\n- stage 6: 0 deaths in 500 runs. Spikes after pad 3: 5 -> 6 tiles (pad\n  flight about 218 px, 6 spikes need about 200 px). New bobbing saw in the\n  flight path between pad 4 and pad 5.\nEasier:\n- stage 2: 48 deaths at the 3 spikes at tile 15: 3 -> 2 spikes.\n- stage 3: patrol saws period 160 -> 220 and 120 -> 180; saw over the gap\n  at tile 30 moved 1 tile up, period 150 -> 180.\n- stage 4: 58 saw deaths on the last ferry: saw period 180 -> 240, the same\n  as the ferry, so the saw is up when the ferry goes below it.\n  Second twin ferry starts 0.5 tile nearer.\n- stage 8: 62 laser deaths at tile 64 (35 high-skill; no room to stop\n  after the crumble tiles): run before the laser 3 -> 5 tiles, period\n  90 -> 120. Patrol saw at tiles 69-71 (78 deaths) -> one bobbing saw.",
+    "simDiff": [
+     {
+      "hunk": "-49 +49",
+      "del": "b.spikes(1); b.gap(3)",
+      "add": "b.gap(4); b.spikes(2)"
+     },
+     {
+      "hunk": "-52 +52",
+      "del": "b.spikes(3)",
+      "add": "b.spikes(2)"
+     },
+     {
+      "hunk": "-57,2 +57,2",
+      "del": "b.saw({ dy: 0.5, ax: 5, period: 160 }); b.saw({ dx: 1, dy: 1, ay: -3.5, period: 150 })",
+      "add": "b.saw({ dy: 0.5, ax: 5, period: 220 }); b.saw({ dx: 1, dy: 2, ay: -3, period: 180 })"
+     },
+     {
+      "hunk": "-60 +60",
+      "del": "b.saw({ dy: 0.5, ax: 4, period: 120 })",
+      "add": "b.saw({ dy: 0.5, ax: 4, period: 180 })"
+     },
+     {
+      "hunk": "-65,2 +65,2",
+      "del": "b.plat({ dx: 7, w: 3, ax: 3.5, period: 160, phase: 80 }); b.saw({ dx: 5, dy: 0.5, ay: -4, period: 180 })",
+      "add": "b.plat({ dx: 6.5, w: 3, ax: 4, period: 160, phase: 80 }); b.saw({ dx: 5, dy: 0.5, ay: -4, period: 240 })"
+     },
+     {
+      "hunk": "-73,2 +73,2",
+      "del": "b.spikes(5)",
+      "add": "b.spikes(6); b.saw({ dx: 3.5, dy: 3, ay: -3, period: 120 })"
+     },
+     {
+      "hunk": "-85 +85",
+      "del": "b.laser({ period: 90, on: 45 }); b.saw({ dy: 0.5, ax: 4, period: 180 }); b.run(3)",
+      "add": "b.run(5); b.laser({ period: 120, on: 50 }); b.saw({ dx: 2, dy: 0.6, ay: -3, period: 150 })"
+     }
+    ],
+    "filesChanged": 1,
+    "insertions": 11,
+    "deletions": 11
+   },
+   "reviews": [
+    {
+     "persona": "casual",
+     "score": 4.2,
+     "stageScores": [
+      7,
+      6,
+      3,
+      6,
+      7,
+      0,
+      7,
+      6
+     ],
+     "review": "I like the look: each stage has its own colour and the ghost is easy to see. First Steps and Crumble Bridge feel friendly, and Laser Gate is clear because I can see which beams are on. But Spring Loaded stops me dead. My ghost stands next to a spring in front of a long spike row for 45 seconds and nobody out of 100 gets past, so I would never see stages 7 and 8. Saw Mill also comes too early: saws float everywhere and I die in five seconds. Ferry Lines has many falls for a stage with almost no hazards.",
+     "best": "Crumble Bridge and Laser Gate are readable, pretty and beatable with a little care.",
+     "worst": "Spring Loaded is impossible, the spring before the spike row does not get anyone across, so the game ends at stage 6."
+    },
+    {
+     "persona": "designer",
+     "score": 4.9,
+     "stageScores": [
+      6,
+      7,
+      5,
+      6,
+      7,
+      0,
+      7,
+      7
+     ],
+     "review": "I like the one-mechanic-per-stage structure: First Steps teaches gaps and one spike pair, Spike Garden builds on it, and Gauntlet remixes everything as a proper final exam. Laser Gate and Crumble Bridge read clearly and sit in a fair band. But Spring Loaded is broken: all 100 ghosts stall at the first spring before the spike field, so the spring is never taught and the stage cannot be finished. Saw Mill spikes too early for stage 3, with many drifting saws and deaths spread over the plateau. Ferry Lines loses 43 players to pits with no visible cue for platform timing.",
+     "best": "Gauntlet combines saws, crumble tiles, ferries, a spring and lasers in a readable final exam with a 60% pass rate.",
+     "worst": "Spring Loaded is impossible: nobody gets past the first spring at 38%, so the game cannot be completed."
+    },
+    {
+     "persona": "speedrunner",
+     "score": 4.8,
+     "stageScores": [
+      5,
+      7,
+      6,
+      6,
+      7,
+      0,
+      7,
+      7
+     ],
+     "review": "Spring Loaded kills this build for me: all 100 ghosts stall at the second spring in front of the long spike row and time out, so no run can be completed. That is a hard blocker, not a difficulty problem. The rest has good flow. Crumble Bridge and Laser Gate are fast, readable and punish only bad timing. Gauntlet mixes every mechanic well, but the laser there killed the high-skill player, which looks like a cycle I cannot read early enough. Saw Mill kills at 50% with drifting saws that look partly random. First Steps is flat and slow.",
+     "best": "Crumble Bridge and Laser Gate give fast, readable routes where each death is the fault of the player.",
+     "worst": "Spring Loaded cannot be finished by anyone: every ghost is stuck at the spring before the spike row."
+    }
+   ],
+   "panelScore": 4.63,
+   "metrics": {
+    "inBand": 4,
+    "botRuns": 4000,
+    "mid": [
+     86.7,
+     62,
+     59.3,
+     52.7,
+     76.7,
+     2,
+     80,
+     62
+    ],
+    "pass": [
+     81.6,
+     60,
+     58.8,
+     55.6,
+     73.8,
+     1.6,
+     69.2,
+     60.2
+    ],
+    "timeouts": 539,
+    "deaths": 1696,
+    "findings": 9,
+    "frameTime": {
+     "note": "swarm mode, 100 bots, speed 1, headless Chromium on the build machine",
+     "frames": 1440,
+     "cpuMedianMs": 0.5,
+     "cpuP95Ms": 0.9,
+     "cpuMaxMs": 1.5,
+     "rafMedianMs": 16.7,
+     "rafP95Ms": 16.7
+    }
+   },
+   "lines": [
+    "[v6] swarm run: seeds 101,202,303,404,505 · 100 bots · 8 stages · 4000 bot runs",
+    "[v6] stage 1 First Steps: pass 408/500 (81.6%) · low 67.4 mid 86.7 high 91.4 · deaths pit 34, spike 38, timeout 20 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 38 spike ×24",
+    "[v6] stage 2 Spike Garden: pass 300/500 (60%) · low 26.3 mid 62 high 92 · deaths spike 161, pit 15, timeout 24 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 69 spike ×39",
+    "[v6] stage 3 Saw Mill: pass 294/500 (58.8%) · low 29.1 mid 59.3 high 88 · deaths saw 170, pit 36 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 38 saw ×30",
+    "[v6] stage 4 Ferry Lines: pass 278/500 (55.6%) · low 29.7 mid 52.7 high 84 · deaths pit 195, saw 27 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 46 pit ×40",
+    "[v6] stage 5 Crumble Bridge: pass 369/500 (73.8%) · low 48 mid 76.7 high 97.1 · deaths pit 80, saw 47, timeout 4 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 61 pit ×21",
+    "[v6] stage 6 Spring Loaded: pass 8/500 (1.6%) · low 2.9 mid 2 high 0 · deaths saw 1, timeout 491 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 27 timeout ×316",
+    "[v6] stage 7 Laser Gate: pass 346/500 (69.2%) · low 33.1 mid 80 high 96 · deaths laser 80, pit 27, spike 22, saw 25 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 44 laser ×41",
+    "[v6] stage 8 Gauntlet: pass 301/500 (60.2%) · low 25.7 mid 62 high 93.1 · deaths spike 68, saw 57, laser 23, pit 51 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 44 spike ×20",
+    "[v6] FINDING stage 1 [too-easy]: mid-skill pass 86.7% > 80%",
+    "[v6] FINDING stage 1 [timeout]: 20 bots hit the 45 s limit",
+    "[v6] FINDING stage 2 [timeout]: 24 bots hit the 45 s limit",
+    "[v6] FINDING stage 3 [too-hard]: mid-skill pass 59.3% < 60%",
+    "[v6] FINDING stage 4 [too-hard]: mid-skill pass 52.7% < 60%",
+    "[v6] FINDING stage 5 [timeout]: 4 bots hit the 45 s limit",
+    "[v6] FINDING stage 6 [too-hard]: mid-skill pass 2% < 60%",
+    "[v6] FINDING stage 6 [timeout]: 491 bots hit the 45 s limit",
+    "[v6] FINDING stage 6 [high-skill-fail]: high-skill pass only 0%",
+    "[v6] stages in the 60–80% mid-skill band: 4/8",
+    "[v6] frame time (update+draw, 1440 frames): median 0.5 ms · p95 0.9 ms · max 1.5 ms · rAF interval median 16.7 ms"
+   ]
+  },
+  {
+   "version": 7,
+   "git": {
+    "hash": "020933b",
+    "date": "2026-11-10T22:49:41-08:00",
+    "subject": "v7: revert the failed stage 6 change from v6; third balance pass",
+    "body": "Measurement (v6): stage 6 pass 8/500 (1.6%), 491 timeouts at tiles 26-27.\nThe v6 change \"spikes after pad 3: 5 -> 6 tiles\" was wrong. I used the\npaper number for the pad flight (218 px). Measured flight from the pad:\nthe player comes down 6.1-6.5 tiles after the pad tile, on the 6th spike,\nfrom each start position. Reverted to 5 spikes. The new saw from v6 stays\n(it was reached by 9 bots only, so its effect is not yet measured).\nOther v6 results, mid-skill pass: stage 1 86.7% (too easy), stage 3 59.3%,\nstage 4 52.7% (too hard).\n- stage 1: 20 timeouts at tile 53 (4 tiles of run between a gap and 2\n  spikes): run 4 -> 6 tiles. Harder: gaps at tiles 16 and 67 3 -> 4 tiles,\n  spikes at tile 53 2 -> 3.\n- stage 3: 30 deaths at the two bobbing saws: period 150 -> 170.\n- stage 4: 40 pit deaths between the twin ferries: second ferry 3 -> 4\n  tiles wide. 36 pit deaths at the end of the last ferry line: it stopped\n  0.5 tile short of the ground; travel 6 -> 6.5 tiles.",
+    "simDiff": [
+     {
+      "hunk": "-48,2 +48,2",
+      "del": "b.gap(3); b.spikes(2); b.gap(3); b.run(4)",
+      "add": "b.gap(4); b.spikes(3); b.run(6); b.gap(4)"
+     },
+     {
+      "hunk": "-59 +59",
+      "del": "b.saw({ dx: 2, dy: 0.6, ay: -3, period: 150 }); b.saw({ dx: 7, dy: 0.6, ay: -3, period: 150, phase: 75 })",
+      "add": "b.saw({ dx: 2, dy: 0.6, ay: -3, period: 170 }); b.saw({ dx: 7, dy: 0.6, ay: -3, period: 170, phase: 85 })"
+     },
+     {
+      "hunk": "-65,2 +65,2",
+      "del": "b.plat({ dx: 6.5, w: 3, ax: 4, period: 160, phase: 80 }); b.plat({ dx: 0.5, w: 3, ax: 6, period: 240 })",
+      "add": "b.plat({ dx: 6.5, w: 4, ax: 3.5, period: 160, phase: 80 }); b.plat({ dx: 0.5, w: 3, ax: 6.5, period: 240 })"
+     },
+     {
+      "hunk": "-73 +73",
+      "del": "b.spikes(6)",
+      "add": "b.spikes(5)"
+     }
+    ],
+    "filesChanged": 1,
+    "insertions": 7,
+    "deletions": 7
+   },
+   "reviews": [
+    {
+     "persona": "casual",
+     "score": 6.2,
+     "stageScores": [
+      7,
+      7,
+      4,
+      5,
+      7,
+      5,
+      7,
+      7
+     ],
+     "review": "I like how each stage has its own colour and the screens stay clean; spikes, lasers and the goal door are easy to read. First Steps and Spike Garden feel fair, the spikes sit in plain view. Saw Mill is where I would quit: saws float everywhere at stage three, even the skilled player died, and more than half the ghosts are dead. Ferry Lines kills near the goal with a saw that arrives late, which feels cheap. Crumble Bridge and Laser Gate are fun. Spring Loaded is pretty but nearly risk-free. Gauntlet mixes everything and feels like a proper finale.",
+     "best": "Laser Gate: clear beams, visible timing, deaths that look like my own fault.",
+     "worst": "Saw Mill is a hard wall at stage three with floating saws that are tough to judge."
+    },
+    {
+     "persona": "designer",
+     "score": 5.8,
+     "stageScores": [
+      6,
+      6,
+      3,
+      5,
+      7,
+      5,
+      8,
+      7
+     ],
+     "review": "The curve is upside down in the middle. Saw Mill is stage 3 but it is the hardest: all three recorded players die, and it throws four floating saws at jump height with no safe first saw to learn from. Ferry Lines hides its only saw at 80%, after the ferries, which reads as a gotcha. Then Spring Loaded at stage 6 has almost no risk; nobody dies on its long spike bed. I like Laser Gate: dotted beams telegraph the timing and deaths look earned. Gauntlet mixes every mechanic fairly. First Steps kills two of three players, which is harsh for a tutorial.",
+     "best": "Laser Gate teaches its timing with clear telegraphed beams before it adds spikes and a saw.",
+     "worst": "Saw Mill tests a saw swarm at stage 3 before it teaches one saw, and even the high-skill player dies."
+    },
+    {
+     "persona": "speedrunner",
+     "score": 5.9,
+     "stageScores": [
+      6,
+      7,
+      4,
+      5,
+      7,
+      3,
+      7,
+      7
+     ],
+     "review": "The curve is out of order. Saw Mill at stage 3 kills more than half the field and all three recorded players, including the high-skill one; the saws hang in mid-air at jump height and the deaths are spread along the whole upper deck, so it looks like timing luck, not a line I can learn. Ferry Lines hides its only saw at 80%, after ten seconds of waiting on platforms. Spring Loaded is a free stage: 92 of 100 finish and the one saw is far above the route. Spike Garden, Crumble Bridge, Laser Gate and Gauntlet are tight, readable and fast.",
+     "best": "Gauntlet mixes all the mechanics in 14 seconds and each death there has a clear cause.",
+     "worst": "Saw Mill is harder than the final stage and Spring Loaded, three stages later, has almost no risk."
+    }
+   ],
+   "panelScore": 5.97,
+   "metrics": {
+    "inBand": 4,
+    "botRuns": 4000,
+    "mid": [
+     82,
+     62,
+     51.3,
+     52.7,
+     76.7,
+     90,
+     80,
+     62
+    ],
+    "pass": [
+     75.2,
+     60,
+     49.2,
+     54,
+     73.8,
+     90.6,
+     69.2,
+     60.2
+    ],
+    "timeouts": 28,
+    "deaths": 1339,
+    "findings": 6,
+    "frameTime": {
+     "note": "swarm mode, 100 bots, speed 1, headless Chromium on the build machine",
+     "frames": 1440,
+     "cpuMedianMs": 0.4,
+     "cpuP95Ms": 0.7,
+     "cpuMaxMs": 1.6,
+     "rafMedianMs": 16.7,
+     "rafP95Ms": 16.7
+    }
+   },
+   "lines": [
+    "[v7] swarm run: seeds 101,202,303,404,505 · 100 bots · 8 stages · 4000 bot runs",
+    "[v7] stage 1 First Steps: pass 376/500 (75.2%) · low 52.6 mid 82 high 92 · deaths pit 21, spike 103 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 56 spike ×57",
+    "[v7] stage 2 Spike Garden: pass 300/500 (60%) · low 26.3 mid 62 high 92 · deaths spike 161, pit 15, timeout 24 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 69 spike ×39",
+    "[v7] stage 3 Saw Mill: pass 246/500 (49.2%) · low 18.9 mid 51.3 high 77.7 · deaths saw 216, pit 38 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 39 saw ×51",
+    "[v7] stage 4 Ferry Lines: pass 270/500 (54%) · low 28 mid 52.7 high 81.1 · deaths pit 167, saw 63 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 64 saw ×35",
+    "[v7] stage 5 Crumble Bridge: pass 369/500 (73.8%) · low 48 mid 76.7 high 97.1 · deaths pit 80, saw 47, timeout 4 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 61 pit ×21",
+    "[v7] stage 6 Spring Loaded: pass 453/500 (90.6%) · low 87.4 mid 90 high 94.3 · deaths saw 47 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 45 saw ×47",
+    "[v7] stage 7 Laser Gate: pass 346/500 (69.2%) · low 33.1 mid 80 high 96 · deaths laser 80, pit 27, spike 22, saw 25 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 44 laser ×41",
+    "[v7] stage 8 Gauntlet: pass 301/500 (60.2%) · low 25.7 mid 62 high 93.1 · deaths spike 68, saw 57, laser 23, pit 51 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 44 spike ×20",
+    "[v7] FINDING stage 1 [too-easy]: mid-skill pass 82% > 80%",
+    "[v7] FINDING stage 2 [timeout]: 24 bots hit the 45 s limit",
+    "[v7] FINDING stage 3 [too-hard]: mid-skill pass 51.3% < 60%",
+    "[v7] FINDING stage 4 [too-hard]: mid-skill pass 52.7% < 60%",
+    "[v7] FINDING stage 5 [timeout]: 4 bots hit the 45 s limit",
+    "[v7] FINDING stage 6 [too-easy]: mid-skill pass 90% > 80%",
+    "[v7] stages in the 60–80% mid-skill band: 4/8",
+    "[v7] frame time (update+draw, 1440 frames): median 0.4 ms · p95 0.7 ms · max 1.6 ms · rAF interval median 16.7 ms"
+   ]
+  },
+  {
+   "version": 8,
+   "git": {
+    "hash": "fbe92dc",
+    "date": "2026-11-10T22:51:15-08:00",
+    "subject": "v8: undo a second failed change (stage 3 saw period); fourth balance pass",
+    "body": "Measurement (v7), mid-skill pass: stage 3 51.3% (v6: 59.3%), stage 4\n52.7%, stage 1 82.0%, stage 6 90.0%.\n- stage 3: the v7 change \"two bobbing saws, period 150 -> 170\" made it\n  worse: deaths at tiles 38-39 went 30 -> 80. Period set back to 150.\n  The first saw is 2 tiles after a 1-tile step, so a player who jumps the\n  step comes down in the saw: both saws moved 2 tiles away from the step.\n- stage 4: 63 saw deaths on the last ferry (v6: 27); the longer ferry\n  travel from v7 moved the timing. Lowest saw position 0.5 -> 1.5 tiles\n  above the ferry, so a player who stands on the ferry is always safe and\n  only a jump can touch the saw.\n- stage 1 (too easy): first gap 2 -> 3 tiles.\n- stage 6 (too easy, 47 deaths, all at the v6 saw): second bobbing saw in\n  the flight path between pad 5 and the landing, half a period later.",
+    "simDiff": [
+     {
+      "hunk": "-48 +48",
+      "del": "b.gap(2)",
+      "add": "b.gap(3)"
+     },
+     {
+      "hunk": "-59 +59",
+      "del": "b.saw({ dx: 2, dy: 0.6, ay: -3, period: 170 }); b.saw({ dx: 7, dy: 0.6, ay: -3, period: 170, phase: 85 }); b.run(10)",
+      "add": "b.saw({ dx: 4, dy: 0.6, ay: -3, period: 150 }); b.saw({ dx: 9, dy: 0.6, ay: -3, period: 150, phase: 75 }); b.run(12)"
+     },
+     {
+      "hunk": "-66 +66",
+      "del": "b.saw({ dx: 5, dy: 0.5, ay: -4, period: 240 })",
+      "add": "b.saw({ dx: 5, dy: 1.5, ay: -3, period: 240 })"
+     },
+     {
+      "hunk": "-74 +74",
+      "del": "",
+      "add": "b.saw({ dx: 9.5, dy: 3, ay: -3, period: 120, phase: 60 })"
+     }
+    ],
+    "filesChanged": 1,
+    "insertions": 5,
+    "deletions": 5
+   },
+   "reviews": [
+    {
+     "persona": "casual",
+     "score": 6.4,
+     "stageScores": [
+      7,
+      7,
+      4,
+      5,
+      7,
+      7,
+      8,
+      6
+     ],
+     "review": "I like how this looks: each stage has its own colour, and spikes, saws and lasers are easy to see. First Steps and Spike Garden are fair, but 29 deaths on the first stage is a lot for a tutorial. Saw Mill is where I would quit: stage three, saws float at jump height, and half the mid players die. Ferry Lines is also too hard for me, with many falls into pits. Crumble Bridge and Laser Gate feel fair and readable. Spring Loaded is easy but fun to bounce through. Gauntlet mixes everything and is a good, tense finish.",
+     "best": "Laser Gate is clear, fair and tense, and the dotted lines show me which laser comes on next.",
+     "worst": "Saw Mill comes too early and kills half the players with saws that float where I jump."
+    },
+    {
+     "persona": "designer",
+     "score": 6.2,
+     "stageScores": [
+      6,
+      7,
+      4,
+      5,
+      7,
+      5,
+      7,
+      7
+     ],
+     "review": "I like the one-mechanic-per-stage structure, and Gauntlet recombines spikes, lasers, springs, ferries and crumble tiles well. But the curve is bumpy. First Steps kills 29 of 100 ghosts on a spike cluster, which is harsh for a tutorial. Saw Mill is the real problem: it opens with several moving saws at once, never shows one safe saw first, and only half of mid-skill players pass. Ferry Lines also sits below the band and mostly kills by pits. Then Spring Loaded is a 93% breather with almost no risk. Crumble Bridge and Laser Gate are the best-tuned, readable stages.",
+     "best": "Laser Gate and Crumble Bridge teach one clear idea with readable, fair deaths.",
+     "worst": "Saw Mill tests saws in groups before it teaches a single one, so stage 3 is a difficulty spike."
+    },
+    {
+     "persona": "speedrunner",
+     "score": 6.4,
+     "stageScores": [
+      5,
+      6,
+      6,
+      6,
+      7,
+      5,
+      8,
+      8
+     ],
+     "review": "I like the bones here. Laser Gate is the best stage: the dotted beams telegraph the cycle, so I can route a no-stop line and every death is mine. Gauntlet mixes crumble tiles, ferry, spring and laser into a real final exam. But the curve is lumpy. First Steps kills 29 of 100 on one flat spike strip, Saw Mill and Ferry Lines drop to about half for mid players, then Spring Loaded is a 93% victory lap with saws far above my arc. Saw Mill saws float with no visible path, so I cannot plan a cycle. Spike Garden is one jump repeated.",
+     "best": "Laser Gate has readable beam timing that rewards a clean, non-stop route.",
+     "worst": "Spring Loaded has almost no risk, and it sits right after two stages that are harder than it."
+    }
+   ],
+   "panelScore": 6.33,
+   "metrics": {
+    "inBand": 5,
+    "botRuns": 4000,
+    "mid": [
+     78.7,
+     62,
+     58.7,
+     44.7,
+     76.7,
+     90,
+     80,
+     62
+    ],
+    "pass": [
+     76.2,
+     60,
+     60.2,
+     52.2,
+     73.8,
+     90.6,
+     69.2,
+     60.2
+    ],
+    "timeouts": 30,
+    "deaths": 1288,
+    "findings": 6,
+    "frameTime": {
+     "note": "swarm mode, 100 bots, speed 1, headless Chromium on the build machine",
+     "frames": 1440,
+     "cpuMedianMs": 0.5,
+     "cpuP95Ms": 0.8,
+     "cpuMaxMs": 1.6,
+     "rafMedianMs": 16.7,
+     "rafP95Ms": 16.8
+    }
+   },
+   "lines": [
+    "[v8] swarm run: seeds 101,202,303,404,505 · 100 bots · 8 stages · 4000 bot runs",
+    "[v8] stage 1 First Steps: pass 381/500 (76.2%) · low 53.7 mid 78.7 high 96.6 · deaths pit 27, spike 90, timeout 2 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 57 spike ×51",
+    "[v8] stage 2 Spike Garden: pass 300/500 (60%) · low 26.3 mid 62 high 92 · deaths spike 161, pit 15, timeout 24 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 69 spike ×39",
+    "[v8] stage 3 Saw Mill: pass 301/500 (60.2%) · low 32 mid 58.7 high 89.7 · deaths saw 159, pit 40 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 17 saw ×25",
+    "[v8] stage 4 Ferry Lines: pass 261/500 (52.2%) · low 25.1 mid 44.7 high 85.7 · deaths pit 202, saw 37 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 67 pit ×48",
+    "[v8] stage 5 Crumble Bridge: pass 369/500 (73.8%) · low 48 mid 76.7 high 97.1 · deaths pit 80, saw 47, timeout 4 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 61 pit ×21",
+    "[v8] stage 6 Spring Loaded: pass 453/500 (90.6%) · low 87.4 mid 90 high 94.3 · deaths saw 47 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 45 saw ×47",
+    "[v8] stage 7 Laser Gate: pass 346/500 (69.2%) · low 33.1 mid 80 high 96 · deaths laser 80, pit 27, spike 22, saw 25 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 44 laser ×41",
+    "[v8] stage 8 Gauntlet: pass 301/500 (60.2%) · low 25.7 mid 62 high 93.1 · deaths spike 68, saw 57, laser 23, pit 51 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 44 spike ×20",
+    "[v8] FINDING stage 1 [timeout]: 2 bots hit the 45 s limit",
+    "[v8] FINDING stage 2 [timeout]: 24 bots hit the 45 s limit",
+    "[v8] FINDING stage 3 [too-hard]: mid-skill pass 58.7% < 60%",
+    "[v8] FINDING stage 4 [too-hard]: mid-skill pass 44.7% < 60%",
+    "[v8] FINDING stage 5 [timeout]: 4 bots hit the 45 s limit",
+    "[v8] FINDING stage 6 [too-easy]: mid-skill pass 90% > 80%",
+    "[v8] stages in the 60–80% mid-skill band: 5/8",
+    "[v8] frame time (update+draw, 1440 frames): median 0.5 ms · p95 0.8 ms · max 1.6 ms · rAF interval median 16.7 ms"
+   ]
+  },
+  {
+   "version": 9,
+   "git": {
+    "hash": "0f4cb68",
+    "date": "2026-11-10T22:52:49-08:00",
+    "subject": "v9: stage 4 last ferry wider; stage 6 second saw now has an effect",
+    "body": "Measurement (v8), mid-skill pass: stage 4 44.7% (v7: 52.7%), stage 6\n90.0% (no change), stage 3 58.7%.\n- stage 4: 48 pit deaths at tile 67. Traces: bots come down on the front\n  end of the 3-tile ferry and run off it in the next 3-5 frames. Ferry\n  3 -> 4 tiles wide, travel 6.5 -> 5.5 tiles (it still touches the ground\n  at the far end).\n- stage 6: the second saw from v8 killed 0 bots. It was half a period\n  after the first saw and the flight between them is about half a period,\n  so each bot that got past saw 1 was in time for saw 2. Offset 60 -> 30\n  frames.\n- stage 3: 25 deaths at the patrol saw at tile 17: patrol 5 -> 4 tiles.",
+    "simDiff": [
+     {
+      "hunk": "-57 +57",
+      "del": "b.saw({ dy: 0.5, ax: 5, period: 220 })",
+      "add": "b.saw({ dy: 0.5, ax: 4, period: 220 })"
+     },
+     {
+      "hunk": "-66 +66",
+      "del": "b.plat({ dx: 0.5, w: 3, ax: 6.5, period: 240 })",
+      "add": "b.plat({ dx: 0.5, w: 4, ax: 5.5, period: 240 })"
+     },
+     {
+      "hunk": "-74 +74",
+      "del": "b.saw({ dx: 9.5, dy: 3, ay: -3, period: 120, phase: 60 })",
+      "add": "b.saw({ dx: 9.5, dy: 3, ay: -3, period: 120, phase: 30 })"
+     }
+    ],
+    "filesChanged": 1,
+    "insertions": 4,
+    "deletions": 4
+   },
+   "reviews": [
+    {
+     "persona": "casual",
+     "score": 6.3,
+     "stageScores": [
+      7,
+      6,
+      3,
+      7,
+      7,
+      8,
+      7,
+      6
+     ],
+     "review": "I like how this looks: each stage has its own colour, and the spikes, lasers and springs are easy to read on a small screen. First Steps is a gentle start, and Spring Loaded is the one I would replay, because the bounces feel generous. Saw Mill is where I would put the phone down. It is only stage 3, the small saws float at jump height, and the recorded mid player died right beside the goal. Spike Garden puts a lot of spikes on me very early. Gauntlet mixes everything fairly, but the dotted laser posts are faint against the dark sky.",
+     "best": "Spring Loaded: bouncy, clear, and I can finish it without a cheap death.",
+     "worst": "Saw Mill is much too hard for stage 3 and kills players right at the goal."
+    },
+    {
+     "persona": "designer",
+     "score": 6.4,
+     "stageScores": [
+      7,
+      7,
+      4,
+      6,
+      7,
+      5,
+      8,
+      7
+     ],
+     "review": "I like that each stage owns one mechanic and Gauntlet remixes all of them; that is a correct structure. The curve is the problem. Saw Mill at stage 3 passes only 37% of mid-skill players and kills them at 84%, next to the goal, which is harder than the finale. Spring Loaded at stage 6 is then the easiest stage, and its saws sit high off-screen where a spring throws me blind. Ferry Lines gives all three skill levels the same 12 seconds, so the ferries set the pace, not me. Laser Gate teaches well with its dotted telegraph. First Steps kills 29 of 100 with spikes, which is much for a tutorial.",
+     "best": "Laser Gate: readable telegraphed beams, deaths spread evenly, and a pass rate that fits its late position.",
+     "worst": "Saw Mill is a difficulty spike at stage 3, with moving saws that kill next to the goal."
+    },
+    {
+     "persona": "speedrunner",
+     "score": 6,
+     "stageScores": [
+      5,
+      6,
+      5,
+      4,
+      7,
+      6,
+      7,
+      7
+     ],
+     "review": "I like the hazard variety and the readable screens, but the curve is uneven. Saw Mill is a difficulty spike at stage 3: only 37% of mid players pass and my mid run died to a ground saw right at the goal. Ferry Lines is the opposite problem for me: all three skill levels finish in about 12.4 s, so the platforms set the pace and skill saves no time. Spring Loaded has good air routes but little risk. Crumble Bridge, Laser Gate and Gauntlet flow well, though the high-skill death to a Gauntlet laser and the 25 s Spike Garden run look like timing traps, not execution tests.",
+     "best": "Crumble Bridge and Gauntlet reward continuous movement and mix hazards without stopping the run.",
+     "worst": "Ferry Lines locks every player to the same 12.4 s cycle, and Saw Mill spikes the difficulty too early."
+    }
+   ],
+   "panelScore": 6.23,
+   "metrics": {
+    "inBand": 5,
+    "botRuns": 4000,
+    "mid": [
+     78.7,
+     62,
+     57.3,
+     50.7,
+     76.7,
+     84.7,
+     80,
+     62
+    ],
+    "pass": [
+     76.2,
+     60,
+     60.6,
+     55.8,
+     73.8,
+     84.4,
+     69.2,
+     60.2
+    ],
+    "timeouts": 30,
+    "deaths": 1299,
+    "findings": 6,
+    "frameTime": {
+     "note": "swarm mode, 100 bots, speed 1, headless Chromium on the build machine",
+     "frames": 1440,
+     "cpuMedianMs": 0.5,
+     "cpuP95Ms": 1,
+     "cpuMaxMs": 2.7,
+     "rafMedianMs": 16.7,
+     "rafP95Ms": 16.7
+    }
+   },
+   "lines": [
+    "[v9] swarm run: seeds 101,202,303,404,505 · 100 bots · 8 stages · 4000 bot runs",
+    "[v9] stage 1 First Steps: pass 381/500 (76.2%) · low 53.7 mid 78.7 high 96.6 · deaths pit 27, spike 90, timeout 2 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 57 spike ×51",
+    "[v9] stage 2 Spike Garden: pass 300/500 (60%) · low 26.3 mid 62 high 92 · deaths spike 161, pit 15, timeout 24 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 69 spike ×39",
+    "[v9] stage 3 Saw Mill: pass 303/500 (60.6%) · low 33.1 mid 57.3 high 90.9 · deaths saw 166, pit 31 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 17 saw ×22",
+    "[v9] stage 4 Ferry Lines: pass 279/500 (55.8%) · low 28.6 mid 50.7 high 87.4 · deaths pit 181, saw 40 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 67 pit ×46",
+    "[v9] stage 5 Crumble Bridge: pass 369/500 (73.8%) · low 48 mid 76.7 high 97.1 · deaths pit 80, saw 47, timeout 4 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 61 pit ×21",
+    "[v9] stage 6 Spring Loaded: pass 422/500 (84.4%) · low 78.9 mid 84.7 high 89.7 · deaths saw 78 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 45 saw ×49",
+    "[v9] stage 7 Laser Gate: pass 346/500 (69.2%) · low 33.1 mid 80 high 96 · deaths laser 80, pit 27, spike 22, saw 25 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 44 laser ×41",
+    "[v9] stage 8 Gauntlet: pass 301/500 (60.2%) · low 25.7 mid 62 high 93.1 · deaths spike 68, saw 57, laser 23, pit 51 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 44 spike ×20",
+    "[v9] FINDING stage 1 [timeout]: 2 bots hit the 45 s limit",
+    "[v9] FINDING stage 2 [timeout]: 24 bots hit the 45 s limit",
+    "[v9] FINDING stage 3 [too-hard]: mid-skill pass 57.3% < 60%",
+    "[v9] FINDING stage 4 [too-hard]: mid-skill pass 50.7% < 60%",
+    "[v9] FINDING stage 5 [timeout]: 4 bots hit the 45 s limit",
+    "[v9] FINDING stage 6 [too-easy]: mid-skill pass 84.7% > 80%",
+    "[v9] stages in the 60–80% mid-skill band: 5/8",
+    "[v9] frame time (update+draw, 1440 frames): median 0.5 ms · p95 1 ms · max 2.7 ms · rAF interval median 16.7 ms"
+   ]
+  },
+  {
+   "version": 10,
+   "git": {
+    "hash": "a95e7c0",
+    "date": "2026-11-10T22:54:26-08:00",
+    "subject": "v10: stage 4 last ferry: saw removed, far ground 1 tile lower; stage 3 and 6 tuned",
+    "body": "Measurement (v9), mid-skill pass: stage 4 50.7%, stage 3 57.3%, stage 6\n84.7%. The v9 change \"last ferry 3 -> 4 tiles wide\" did not remove the\ndeaths at tile 67 (48 -> 46).\n- stage 4: new traces show a different cause: bots ride the ferry and then\n  jump for the far ground too early (4.1 tiles from a stop; a standing\n  jump is 132 px = 4.1 tiles, so 1 late or early frame fails). Far ground\n  set 1 tile lower, which gives a longer jump. The saw on this ferry line\n  (36 deaths) is removed: with the early-jump risk it was two tests at\n  one place.\n- stage 3: 29 deaths at the saw wheel (tiles 53-54): period 140 -> 180.\n- stage 6 (too easy): one spike 2 tiles after the landing of pad 2.",
+    "simDiff": [
+     {
+      "hunk": "-60 +60",
+      "del": "b.saw({ dx: 3, dy: 1.5, orbit: 2, period: 140 })",
+      "add": "b.saw({ dx: 3, dy: 1.5, orbit: 2, period: 180 })"
+     },
+     {
+      "hunk": "-66 +66",
+      "del": "b.saw({ dx: 5, dy: 1.5, ay: -3, period: 240 })",
+      "add": "b.down(1)"
+     },
+     {
+      "hunk": "-73 +73",
+      "del": "b.run(4)",
+      "add": "b.run(2); b.spikes(1); b.run(3)"
+     }
+    ],
+    "filesChanged": 1,
+    "insertions": 4,
+    "deletions": 4
+   },
+   "reviews": [
+    {
+     "persona": "casual",
+     "score": 6.2,
+     "stageScores": [
+      7,
+      6,
+      4,
+      8,
+      7,
+      6,
+      6,
+      5
+     ],
+     "review": "I like how this looks: each stage has its own colour, the ghost glows, and spikes and lasers are easy to see. First Steps is gentle, but 29 of 100 players still die on its first spike row, which is a lot for a tutorial. Saw Mill comes much too early; only 37% pass and the saws float around with no clear pattern, so deaths feel random to me. Ferry Lines and Crumble Bridge are my favourites, calm and readable. Spring Loaded hides saws high above the springs. Gauntlet mixes everything and even the best player died there, which would make me quit.",
+     "best": "Ferry Lines is clear, calm and fair, with deaths that are obviously my own missed jumps.",
+     "worst": "Saw Mill is a difficulty spike at stage 3 with drifting saws that kill most players before they learn them."
+    },
+    {
+     "persona": "designer",
+     "score": 6.2,
+     "stageScores": [
+      6,
+      6,
+      3,
+      6,
+      7,
+      7,
+      7,
+      7
+     ],
+     "review": "I like the one-mechanic-per-stage structure: each stage has its own palette and hazard, and Gauntlet recombines all of them fairly. But the curve is broken at Saw Mill. A 37% pass rate at stage 3, after 63% on Spike Garden, is a wall, and the saws float at jump height over flat ground with no safe first example. First Steps kills 29 of 100 at its spike clusters, which is too harsh for a tutorial. Ferry Lines gives all three players the same 12 seconds, so the platforms dictate the pace. Crumble Bridge, Spring Loaded and Laser Gate teach well and their deaths are readable.",
+     "best": "Gauntlet recombines every taught mechanic in short readable beats and ends on a ferry to a high goal.",
+     "worst": "Saw Mill is a stage-3 difficulty wall at 37% pass with saws introduced without a safe first encounter."
+    },
+    {
+     "persona": "speedrunner",
+     "score": 6.2,
+     "stageScores": [
+      6,
+      6,
+      4,
+      5,
+      7,
+      7,
+      7,
+      7
+     ],
+     "review": "I like the readable hazards and the mechanic-per-stage structure, but the curve is wrong. Saw Mill at stage 3 has a 37% pass rate, harder than Gauntlet, and its saws float at jump height with little telegraph. Ferry Lines gives 12.3 s to every skill level, so the platform cycle sets my time, not my execution. First Steps shows the mid ghost stuck in front of spikes for three seconds, and Spike Garden takes the high-skill ghost 25 s. Crumble Bridge, Spring Loaded and Laser Gate flow well. Gauntlet mixes everything fairly, but the laser kill on the best player looks like a cycle trap.",
+     "best": "Crumble Bridge and Spring Loaded keep me moving and reward commitment with clean, readable routes.",
+     "worst": "Saw Mill is a difficulty spike at stage 3, and Ferry Lines has no time to save because the ferries gate everyone equally."
+    }
+   ],
+   "panelScore": 6.2,
+   "metrics": {
+    "inBand": 7,
+    "botRuns": 4000,
+    "mid": [
+     78.7,
+     62,
+     59.3,
+     72,
+     76.7,
+     64.7,
+     80,
+     62
+    ],
+    "pass": [
+     76.2,
+     60,
+     60.4,
+     70.4,
+     73.8,
+     68.6,
+     69.2,
+     60.2
+    ],
+    "timeouts": 36,
+    "deaths": 1306,
+    "findings": 5,
+    "frameTime": {
+     "note": "swarm mode, 100 bots, speed 1, headless Chromium on the build machine",
+     "frames": 1440,
+     "cpuMedianMs": 0.5,
+     "cpuP95Ms": 0.8,
+     "cpuMaxMs": 1.8,
+     "rafMedianMs": 16.7,
+     "rafP95Ms": 16.7
+    }
+   },
+   "lines": [
+    "[v10] swarm run: seeds 101,202,303,404,505 · 100 bots · 8 stages · 4000 bot runs",
+    "[v10] stage 1 First Steps: pass 381/500 (76.2%) · low 53.7 mid 78.7 high 96.6 · deaths pit 27, spike 90, timeout 2 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 57 spike ×51",
+    "[v10] stage 2 Spike Garden: pass 300/500 (60%) · low 26.3 mid 62 high 92 · deaths spike 161, pit 15, timeout 24 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 69 spike ×39",
+    "[v10] stage 3 Saw Mill: pass 302/500 (60.4%) · low 30.3 mid 59.3 high 91.4 · deaths saw 165, pit 33 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 17 saw ×22",
+    "[v10] stage 4 Ferry Lines: pass 352/500 (70.4%) · low 44.6 mid 72 high 94.9 · deaths pit 148 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 25 pit ×24",
+    "[v10] stage 5 Crumble Bridge: pass 369/500 (73.8%) · low 48 mid 76.7 high 97.1 · deaths pit 80, saw 47, timeout 4 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 61 pit ×21",
+    "[v10] stage 6 Spring Loaded: pass 343/500 (68.6%) · low 54.9 mid 64.7 high 85.7 · deaths spike 67, saw 82, timeout 6, pit 2 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 53 saw ×54",
+    "[v10] stage 7 Laser Gate: pass 346/500 (69.2%) · low 33.1 mid 80 high 96 · deaths laser 80, pit 27, spike 22, saw 25 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 44 laser ×41",
+    "[v10] stage 8 Gauntlet: pass 301/500 (60.2%) · low 25.7 mid 62 high 93.1 · deaths spike 68, saw 57, laser 23, pit 51 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 44 spike ×20",
+    "[v10] FINDING stage 1 [timeout]: 2 bots hit the 45 s limit",
+    "[v10] FINDING stage 2 [timeout]: 24 bots hit the 45 s limit",
+    "[v10] FINDING stage 3 [too-hard]: mid-skill pass 59.3% < 60%",
+    "[v10] FINDING stage 5 [timeout]: 4 bots hit the 45 s limit",
+    "[v10] FINDING stage 6 [timeout]: 6 bots hit the 45 s limit",
+    "[v10] stages in the 60–80% mid-skill band: 7/8",
+    "[v10] frame time (update+draw, 1440 frames): median 0.5 ms · p95 0.8 ms · max 1.8 ms · rAF interval median 16.7 ms"
+   ]
+  },
+  {
+   "version": 11,
+   "git": {
+    "hash": "74b4a3b",
+    "date": "2026-11-10T22:55:36-08:00",
+    "subject": "v11: two small changes at the band edges (stages 3 and 7)",
+    "body": "Measurement (v10): 7 of 8 stages in the 60-80% mid-skill band. Stage 3 is\nat 59.3% (0.7 below), stage 7 is at 80.0% (on the upper edge).\n- stage 3: 22 deaths at the first patrol saw (tile 17): period 220 -> 260.\n- stage 7 (a little harder): last laser on-time 70 -> 85 of 120 frames.",
+    "simDiff": [
+     {
+      "hunk": "-57 +57",
+      "del": "b.saw({ dy: 0.5, ax: 4, period: 220 })",
+      "add": "b.saw({ dy: 0.5, ax: 4, period: 260 })"
+     },
+     {
+      "hunk": "-80 +80",
+      "del": "b.laser({ on: 70 })",
+      "add": "b.laser({ on: 85 })"
+     }
+    ],
+    "filesChanged": 1,
+    "insertions": 3,
+    "deletions": 3
+   },
+   "reviews": [
+    {
+     "persona": "casual",
+     "score": 6.2,
+     "stageScores": [
+      7,
+      6,
+      3,
+      6,
+      7,
+      7,
+      7,
+      6
+     ],
+     "review": "I like how each stage has its own colour and the hazards are easy to see. First Steps is friendly, but 29 of 100 ghosts still die there, mostly at one spike row, which is a lot for a tutorial. Saw Mill is where I would quit: the saws float at many heights, the mid player dies, and it comes too early at stage 3. Ferry Lines, Crumble Bridge and Spring Loaded feel fair and fun. Laser Gate shows its beams clearly. Gauntlet mixes everything, but the small crumble tiles are hard to see and even the skilled player dies.",
+     "best": "Spring Loaded and Crumble Bridge look fun, clear and fair, with deaths that are my own fault.",
+     "worst": "Saw Mill is a difficulty spike at stage 3 with saws that are hard to read, and most players like me die there."
+    },
+    {
+     "persona": "designer",
+     "score": 6.5,
+     "stageScores": [
+      6,
+      7,
+      4,
+      7,
+      7,
+      6,
+      8,
+      7
+     ],
+     "review": "Each stage gives one mechanic its own colour and Gauntlet combines all of them, so the structure is sound. The curve is not. First Steps kills 29 of 100 ghosts at its first spike patch, which is too hard for a tutorial. Saw Mill is the hardest stage at position 3: it has many saws in the air, their paths are not shown, and the mid player dies with no warning. Spring Loaded tests saws in flight before it teaches a safe bounce. Laser Gate is the best lesson because the dotted beams show the danger early. Ferry Lines and Crumble Bridge are fair but have few hazards.",
+     "best": "Laser Gate shows each beam with a dotted line before it fires, so each death is readable.",
+     "worst": "Saw Mill is a difficulty spike at stage 3 with saw paths that the player cannot read."
+    },
+    {
+     "persona": "speedrunner",
+     "score": 6.1,
+     "stageScores": [
+      5,
+      6,
+      6,
+      4,
+      7,
+      6,
+      7,
+      7
+     ],
+     "review": "I like the hazard variety and the clean, readable screens. Crumble Bridge and Laser Gate look like real routing stages: commit, keep moving, time the beam. But skill barely buys time. Ferry Lines ends at 12.3 s for everyone, so the platforms set my pace, not my hands. Spring Loaded is the same, 11.1 against 11.0. In Spike Garden the high-skill run takes 25.1 s, twice the mid run, which smells like forced waiting. Saw Mill spikes too early at 43% with floating saws that look hard to read in the air. First Steps kills 29 of 100 on its first spike row. Gauntlet is a good mixed final exam.",
+     "best": "Crumble Bridge and Laser Gate reward commitment and timing with deaths that look like my own fault.",
+     "worst": "Ferry Lines is a 12.3 s autoscroller for every skill level, so there is nothing to optimise."
+    }
+   ],
+   "panelScore": 6.27,
+   "metrics": {
+    "inBand": 7,
+    "botRuns": 4000,
+    "mid": [
+     78.7,
+     62,
+     56,
+     72,
+     76.7,
+     64.7,
+     76.7,
+     62
+    ],
+    "pass": [
+     76.2,
+     60,
+     58.2,
+     70.4,
+     73.8,
+     68.6,
+     66.8,
+     60.2
+    ],
+    "timeouts": 36,
+    "deaths": 1329,
+    "findings": 5,
+    "frameTime": {
+     "note": "swarm mode, 100 bots, speed 1, headless Chromium on the build machine",
+     "frames": 1440,
+     "cpuMedianMs": 0.6,
+     "cpuP95Ms": 1,
+     "cpuMaxMs": 2,
+     "rafMedianMs": 16.7,
+     "rafP95Ms": 16.7
+    }
+   },
+   "lines": [
+    "[v11] swarm run: seeds 101,202,303,404,505 · 100 bots · 8 stages · 4000 bot runs",
+    "[v11] stage 1 First Steps: pass 381/500 (76.2%) · low 53.7 mid 78.7 high 96.6 · deaths pit 27, spike 90, timeout 2 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 57 spike ×51",
+    "[v11] stage 2 Spike Garden: pass 300/500 (60%) · low 26.3 mid 62 high 92 · deaths spike 161, pit 15, timeout 24 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 69 spike ×39",
+    "[v11] stage 3 Saw Mill: pass 291/500 (58.2%) · low 28 mid 56 high 90.3 · deaths saw 169, pit 40 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 17 saw ×26",
+    "[v11] stage 4 Ferry Lines: pass 352/500 (70.4%) · low 44.6 mid 72 high 94.9 · deaths pit 148 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 25 pit ×24",
+    "[v11] stage 5 Crumble Bridge: pass 369/500 (73.8%) · low 48 mid 76.7 high 97.1 · deaths pit 80, saw 47, timeout 4 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 61 pit ×21",
+    "[v11] stage 6 Spring Loaded: pass 343/500 (68.6%) · low 54.9 mid 64.7 high 85.7 · deaths spike 67, saw 82, timeout 6, pit 2 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 53 saw ×54",
+    "[v11] stage 7 Laser Gate: pass 334/500 (66.8%) · low 29.7 mid 76.7 high 95.4 · deaths laser 80, pit 27, spike 22, saw 37 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 44 laser ×41",
+    "[v11] stage 8 Gauntlet: pass 301/500 (60.2%) · low 25.7 mid 62 high 93.1 · deaths spike 68, saw 57, laser 23, pit 51 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 44 spike ×20",
+    "[v11] FINDING stage 1 [timeout]: 2 bots hit the 45 s limit",
+    "[v11] FINDING stage 2 [timeout]: 24 bots hit the 45 s limit",
+    "[v11] FINDING stage 3 [too-hard]: mid-skill pass 56% < 60%",
+    "[v11] FINDING stage 5 [timeout]: 4 bots hit the 45 s limit",
+    "[v11] FINDING stage 6 [timeout]: 6 bots hit the 45 s limit",
+    "[v11] stages in the 60–80% mid-skill band: 7/8",
+    "[v11] frame time (update+draw, 1440 frames): median 0.6 ms · p95 1 ms · max 2 ms · rAF interval median 16.7 ms"
+   ]
+  },
+  {
+   "version": 12,
+   "git": {
+    "hash": "646eb0c",
+    "date": "2026-11-10T22:56:54-08:00",
+    "subject": "v12: stage 3: one saw removed; a third \"slower saw\" change reverted",
+    "body": "Measurement (v11): stage 3 mid-skill pass 56.0% (v10: 59.3%). The v11\nchange \"patrol saw period 220 -> 260\" made it worse (deaths at tile 17\n22 -> 26). This is the third time that a slower saw gave more deaths\n(v7, v9/v11): a slow saw is in the way for a longer time. Period set back\nto 220.\nThe stage has 7 saws and the deaths are spread over all of them (no one\nspot above 26 of 209). The second of the two bobbing saws (tile 46, 17\ndeaths) is removed and the run there is 2 tiles shorter.",
+    "simDiff": [
+     {
+      "hunk": "-57 +57",
+      "del": "b.saw({ dy: 0.5, ax: 4, period: 260 })",
+      "add": "b.saw({ dy: 0.5, ax: 4, period: 220 })"
+     },
+     {
+      "hunk": "-59 +59",
+      "del": "b.saw({ dx: 9, dy: 0.6, ay: -3, period: 150, phase: 75 }); b.run(12)",
+      "add": "b.run(10)"
+     }
+    ],
+    "filesChanged": 1,
+    "insertions": 3,
+    "deletions": 3
+   },
+   "reviews": [
+    {
+     "persona": "casual",
+     "score": 6,
+     "stageScores": [
+      6,
+      6,
+      4,
+      7,
+      7,
+      6,
+      6,
+      6
+     ],
+     "review": "I like how it looks: each stage has its own colour, and spikes, saws and lasers are easy to read. But First Steps is not a gentle start. 29 of 100 ghosts died there, and the mid player stood beside one spike patch for about six seconds. Saw Mill comes too early and feels mean, with small saws floating at jump height. Ferry Lines and Crumble Bridge were my favourites, because a fall there is clearly my own mistake. Laser Gate is clear, but the dim dotted lasers are hard to see. Gauntlet mixes everything and killed even the best player, so I would probably quit there.",
+     "best": "Ferry Lines and Crumble Bridge are clean, readable stages where a death is my own fault.",
+     "worst": "Saw Mill is too hard for stage 3, and First Steps already kills almost a third of players."
+    },
+    {
+     "persona": "designer",
+     "score": 6.5,
+     "stageScores": [
+      6,
+      6,
+      5,
+      7,
+      7,
+      7,
+      7,
+      7
+     ],
+     "review": "I like that each stage owns one mechanic and Gauntlet recombines all of them; that is correct teaching order. The curve is flat, not rising: First Steps kills 29 of 100 on its first spike row, which is too harsh for a tutorial, and Saw Mill (57%) is harder than Laser Gate (73%). Saw Mill deaths cluster around flying saws whose paths I cannot read from the screen. Ferry Lines and Crumble Bridge have fair pit deaths but little secondary threat. Laser Gate telegraphs its off-beams with dotted lines, which is good. Gauntlet killing the high-skill player on a laser looks like timing luck.",
+     "best": "Laser Gate: dotted idle beams make every death readable and the spike-then-laser pairing escalates cleanly.",
+     "worst": "Saw Mill: the hardest stage in the set sits at slot 3, with saw paths that are not telegraphed."
+    },
+    {
+     "persona": "speedrunner",
+     "score": 6.4,
+     "stageScores": [
+      5,
+      6,
+      6,
+      6,
+      7,
+      7,
+      7,
+      8
+     ],
+     "review": "I like the readable hazards and the ten-second stage length; Gauntlet chains saws, crumble tiles, ferries, a spring and lasers into a real route, and Spring Loaded and Laser Gate have a rhythm I would grind. But the curve is flat: First Steps kills 29 of 100 at a plain spike strip, and the mid player stood beside it for six seconds, while Saw Mill is the hardest stage at 57% in slot three. Ferry Lines and Saw Mill give all three skills the same time, so there is nothing to optimise. Spike Garden is one repeated jump, and the high-skill run there took 25 seconds.",
+     "best": "Gauntlet mixes every mechanic into one fast, readable route with real risk for all skill levels.",
+     "worst": "The difficulty curve is flat and out of order, with a tutorial that kills 29% and identical finish times on Saw Mill and Ferry Lines."
+    }
+   ],
+   "panelScore": 6.3,
+   "metrics": {
+    "inBand": 8,
+    "botRuns": 4000,
+    "mid": [
+     78.7,
+     62,
+     66.7,
+     72,
+     76.7,
+     64.7,
+     76.7,
+     62
+    ],
+    "pass": [
+     76.2,
+     60,
+     65.6,
+     70.4,
+     73.8,
+     68.6,
+     66.8,
+     60.2
+    ],
+    "timeouts": 36,
+    "deaths": 1292,
+    "findings": 4,
+    "frameTime": {
+     "note": "swarm mode, 100 bots, speed 1, headless Chromium on the build machine",
+     "frames": 1440,
+     "cpuMedianMs": 0.5,
+     "cpuP95Ms": 0.8,
+     "cpuMaxMs": 1.5,
+     "rafMedianMs": 16.7,
+     "rafP95Ms": 16.7
+    }
+   },
+   "lines": [
+    "[v12] swarm run: seeds 101,202,303,404,505 · 100 bots · 8 stages · 4000 bot runs",
+    "[v12] stage 1 First Steps: pass 381/500 (76.2%) · low 53.7 mid 78.7 high 96.6 · deaths pit 27, spike 90, timeout 2 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 57 spike ×51",
+    "[v12] stage 2 Spike Garden: pass 300/500 (60%) · low 26.3 mid 62 high 92 · deaths spike 161, pit 15, timeout 24 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 69 spike ×39",
+    "[v12] stage 3 Saw Mill: pass 328/500 (65.6%) · low 40 mid 66.7 high 90.3 · deaths saw 144, pit 28 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 49 saw ×27",
+    "[v12] stage 4 Ferry Lines: pass 352/500 (70.4%) · low 44.6 mid 72 high 94.9 · deaths pit 148 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 25 pit ×24",
+    "[v12] stage 5 Crumble Bridge: pass 369/500 (73.8%) · low 48 mid 76.7 high 97.1 · deaths pit 80, saw 47, timeout 4 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 61 pit ×21",
+    "[v12] stage 6 Spring Loaded: pass 343/500 (68.6%) · low 54.9 mid 64.7 high 85.7 · deaths spike 67, saw 82, timeout 6, pit 2 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 53 saw ×54",
+    "[v12] stage 7 Laser Gate: pass 334/500 (66.8%) · low 29.7 mid 76.7 high 95.4 · deaths laser 80, pit 27, spike 22, saw 37 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 44 laser ×41",
+    "[v12] stage 8 Gauntlet: pass 301/500 (60.2%) · low 25.7 mid 62 high 93.1 · deaths spike 68, saw 57, laser 23, pit 51 · stuck 0 embedded 0 fall-through 0 · top death spot: tile 44 spike ×20",
+    "[v12] FINDING stage 1 [timeout]: 2 bots hit the 45 s limit",
+    "[v12] FINDING stage 2 [timeout]: 24 bots hit the 45 s limit",
+    "[v12] FINDING stage 5 [timeout]: 4 bots hit the 45 s limit",
+    "[v12] FINDING stage 6 [timeout]: 6 bots hit the 45 s limit",
+    "[v12] stages in the 60–80% mid-skill band: 8/8",
+    "[v12] frame time (update+draw, 1440 frames): median 0.5 ms · p95 0.8 ms · max 1.5 ms · rAF interval median 16.7 ms"
+   ]
+  }
+ ],
+ "totals": {
+  "versions": 12,
+  "commits": 12,
+  "botRuns": 48000,
+  "reviews": 36
+ }
+}
