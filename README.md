@@ -41,7 +41,9 @@ node tools/run-swarm.mjs
 
 ## Leaderboard (hosted game only)
 
-After a full run from stage 1, the results screen asks for a name and sends the run to `/api/scores`.
+There are two boards. **Full run:** the total time for all 8 stages, from stage 1. **Stage records:** the best time for each stage, from a full run or from one stage played alone (STAGE SELECT in the menu). People and bots have separate records; the best bot time is shown as the time to beat. A tie goes to the earlier run.
+
+After a run, the results screen asks for a name and sends the run to `/api/scores`.
 
 - **The page does not send a time.** It sends the recorded inputs (one code for each tick). The server replays them with the same `sim.js` and `play.js` and stores the time that the replay gives. A cut or changed recording is refused.
 - **Storage:** one small file for each score in a private Vercel Blob store. All fields are in the file name, so a listing is the leaderboard.
