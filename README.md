@@ -27,7 +27,7 @@ The two install steps are necessary only for the measurement tools. The game its
 | `index.html?mode=replay&a=1&b=12&stage=2&speed=4` | Two versions, top and bottom, same seed. |
 | `index.html?mode=play&auto=1` | A top-skill bot plays through the human input path. |
 | `viewer.html` | Split-screen history, v1 to v12, 40.8 s. Options: `?per=3.3&speed=8`. `R` starts it again. |
-| `post.html` | Square cut for a social video (25.6 s, 16 bars at 150 BPM), one headline for each shot. `?scale=2` draws it at 2160x2160. Headlines use Phosphate, a macOS system font. Render: `SCALE=2 node tools/render-post.mjs video/master-2160-silent.mp4`, music: `python3 tools/music.py video/music.wav` (an original chiptune made in code, no samples, no lyrics), then mux with ffmpeg. Outputs: `video/hundred-ghosts-post.mp4` (1080x1080, for upload) and `video/hundred-ghosts-post-2160.mp4` (master). |
+| `post.html` | Square cut for a social video (25.6 s, 16 bars at 150 BPM), one headline for each shot. `?scale=2` draws it at 2160x2160. Headlines use Phosphate, a macOS system font. Render: `SCALE=2 node tools/render-post.mjs video/master-2160-silent.mp4`, music: `python3 tools/music.py video/music.wav` (an original electronic track made in code with numpy, no samples, no lyrics), then mux with ffmpeg. Outputs: `video/hundred-ghosts-post.mp4` (1080x1080, for upload) and `video/hundred-ghosts-post-2160.mp4` (master). |
 
 Controls: arrow keys or A/D to move, Space / Z / Up to jump, R to restart a stage, Esc for the menu. On a touch screen: two buttons at the bottom left, JUMP at the bottom right.
 
