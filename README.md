@@ -24,7 +24,7 @@ The two install steps are necessary only for the measurement tools. The game its
 
 | Page | What it shows |
 |---|---|
-| `http://127.0.0.1:8100/index.html` | Title screen. PLAY (human), SWARM (100 bots), REPLAY (v1 against v12). |
+| `http://127.0.0.1:8100/index.html` | Title screen. Main controls: PLAY, STAGE SELECT, LEADERBOARD. Below them, marked "watch only": the 100-bot swarm. |
 | `index.html?mode=swarm&stage=3&seed=101&speed=2` | Swarm mode on one stage (`stage=all` for all 8). |
 | `index.html?mode=replay&a=1&b=12&stage=2&speed=4` | Two versions, top and bottom, same seed. |
 | `index.html?mode=play&auto=1` | A top-skill bot plays through the human input path. |

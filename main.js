@@ -27,13 +27,16 @@ const up = e => { pts.delete(e.pointerId); touchZones(); }; cv.addEventListener(
 const hit = c => pressed.includes(c), anyOf = (...c) => c.some(k => keys[k]);
 
 // ---------- title ----------
-const MENU = [['PLAY · all 8 stages', () => startPlay(0)], ['STAGE SELECT · one stage', () => openSelect()], ['LEADERBOARD', () => openBoard()], ['SWARM · 100 ghost bots', () => startSwarm('all')], ['REPLAY · v1 against latest', () => startReplay(1, INDEX.versions[INDEX.versions.length - 1], 'all')]];
+// Main controls are large. The last entry is "watch only": small, lower, with its own label.
+// (The v1-against-latest replay is not in the menu; it is still at ?mode=replay.)
+const MENU = [['PLAY', () => startPlay(0)], ['STAGE SELECT', () => openSelect()], ['LEADERBOARD', () => openBoard()], ['Watch 100 ghost bots play', () => startSwarm('all'), true]];
+const menuBox = i => MENU[i][2] ? { x: 345, y: 452, w: 270, h: 26 } : { x: 280, y: 290 + i * 46, w: 400, h: 40 };
 let menuSel = 0, demo = null;
 function updateTitle() {
   if (!demo || demo.sw.over) demo = new R.SwarmView(SIM, (tick / 900 | 0) % NST, SEED + (tick / 900 | 0));
   demo.update(1);
   if (hit('ArrowDown') || hit('KeyS')) menuSel = (menuSel + 1) % MENU.length; if (hit('ArrowUp') || hit('KeyW')) menuSel = (menuSel + MENU.length - 1) % MENU.length;
-  for (const t of taps) for (let i = 0; i < MENU.length; i++) if (Math.abs(t.y - (310 + i * 38)) < 20 && Math.abs(t.x - 480) < 220) { menuSel = i; MENU[i][1](); return; }
+  for (const t of taps) for (let i = 0; i < MENU.length; i++) { const b = menuBox(i); if (t.x > b.x && t.x < b.x + b.w && t.y > b.y - 4 && t.y < b.y + b.h + 4) { menuSel = i; MENU[i][1](); return; } }
   if (hit('Enter') || hit('Space')) MENU[menuSel][1]();
 }
 function drawTitle() {
@@ -41,7 +44,13 @@ function drawTitle() {
   const bob = Math.sin(tick * 0.05) * 5;
   ctx.save(); ctx.shadowColor = '#ff7ad9'; ctx.shadowBlur = 30; text(ctx, 'HUNDRED', 480, 150 + bob, 92, '#fff', 'center', 900); text(ctx, 'GHOSTS', 480, 236 + bob, 92, '#ffe27a', 'center', 900); ctx.restore();
   text(ctx, 'an obstacle course that plays itself 100 times, then gets fixed', 480, 276, 16, '#c9cdf5', 'center', 600);
-  MENU.forEach((m, i) => { const y = 310 + i * 38, sel = i === menuSel; panel(ctx, 280, y - 24, 400, 34, sel ? 0.9 : 0.55); if (sel) { ctx.strokeStyle = '#ff7ad9'; ctx.lineWidth = 2; ctx.beginPath(); ctx.roundRect(280, y - 24, 400, 34, 8); ctx.stroke(); } text(ctx, (sel ? '▶ ' : '') + m[0], 480, y, 17, sel ? '#fff' : '#b8bde6', 'center', 800); });
+  MENU.forEach((m, i) => { const b = menuBox(i), sel = i === menuSel;
+    if (m[2]) { // watch only: no filled button, an outline and an eye mark
+      text(ctx, 'WATCH ONLY', 480, b.y - 8, 10, '#7d83b0', 'center', 800);
+      ctx.strokeStyle = sel ? '#6ec6ff' : 'rgba(154,160,200,.45)'; ctx.lineWidth = sel ? 2 : 1; ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, 13); ctx.stroke();
+      text(ctx, '◉  ' + m[0], 480, b.y + 18, 13, sel ? '#6ec6ff' : '#9aa0c8', 'center', 700);
+    } else { panel(ctx, b.x, b.y, b.w, b.h, sel ? 0.92 : 0.6); if (sel) { ctx.strokeStyle = '#ff7ad9'; ctx.lineWidth = 2; ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, 8); ctx.stroke(); }
+      text(ctx, (sel ? '▶ ' : '') + m[0], 480, b.y + 28, i === 0 ? 22 : 18, sel ? '#fff' : '#c9cdf5', 'center', 900); } });
   text(ctx, '← → move · space jump · R restart stage · esc menu', 480, 508, 13, '#9aa0c8', 'center', 600);
   text(ctx, 'v' + SIM.VERSION + ' · seed ' + SEED, 944, 526, 12, '#9aa0c8', 'right', 700);
 }
@@ -206,6 +215,7 @@ function updateSwarm() {
 }
 function drawSwarm() {
   const v = W.view; v.draw(ctx, 0, 0, LW, LH, { full: true, speed: SPEED });
+  if (!Q.get('mode')) { panel(ctx, 400, 406, 160, 24, 0.8); text(ctx, 'watch only · esc: menu', 480, 423, 12, '#6ec6ff', 'center', 700); } // only when opened from the menu, so recorded views stay clean
   if (v.sw.over) { const pct = v.midPct(), col = R.bandColor(pct); panel(ctx, 300, 200, 360, 104, 0.9); text(ctx, v.st.name.toUpperCase(), 480, 228, 14, '#b8bde6', 'center', 800); text(ctx, Math.round(pct) + '% mid-skill pass', 480, 262, 28, col, 'center', 900);
     text(ctx, pct < 60 ? 'TOO HARD · below the 60–80 band' : pct > 80 ? 'TOO EASY · above the 60–80 band' : 'IN THE 60–80 BAND', 480, 288, 13, col, 'center', 800); }
 }
