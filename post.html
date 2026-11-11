@@ -99,6 +99,24 @@
     c.font = fontOf(40, 700); const w = c.measureText(txt).width + 36; c.fillStyle = col; c.beginPath(); c.roundRect(x, y, w, 62, 8); c.fill(); put(fontOf(40, 700), txt, x + 18, y + 45, '#0b0d22'); c.restore(); }
   const W_ = '#ffffff', GOLD = '#ffe27a', PINK = '#ff7ad9', RED = '#ff7a8c', GREEN = '#5df2a0', DIM = '#c9cdf5';
 
+  // The word SWARM made of small ghosts. The target points come from the text itself, drawn off screen.
+  let swarmPts = null;
+  function swarmCard(h) {
+    const SIZE = 220, BASE = 560, TRACK = 14;
+    if (!swarmPts) { const o = document.createElement('canvas'); o.width = 1080; o.height = 320; const x = o.getContext('2d'); x.font = fontOf(SIZE, 700); x.textAlign = 'center'; x.letterSpacing = TRACK + 'px'; x.fillStyle = '#fff'; x.fillText('SWARM', 540 + TRACK / 2, 260);
+      const d = x.getImageData(0, 0, 1080, 320).data, rnd = API.mulberry32(7); swarmPts = [];
+      for (let y = 5; y < 320; y += 10) for (let xx = 5; xx < 1080; xx += 10) if (d[(y * 1080 + xx) * 4 + 3] > 140) { const a = rnd() * Math.PI * 2, r = 760 + rnd() * 520; swarmPts.push({ tx: xx, ty: y + BASE - 260, a, r, d: rnd() * 18, hue: 180 + rnd() * 150, ph: rnd() * 6.28 }); } }
+    const at = (pt, hh) => { const p = outQ((hh - pt.d) / 28), ang = pt.a + (1 - p) * 1.4, rr = pt.r * (1 - p), bob = p >= 1 ? Math.sin(hh * 0.16 + pt.ph) * 1.6 : 0; return [pt.tx + Math.cos(ang) * rr, pt.ty + Math.sin(ang) * rr + bob, p]; };
+    const ghost = (x, y, s) => { c.beginPath(); c.arc(x, y, s, Math.PI, 0); c.lineTo(x + s, y + s * 1.1); c.lineTo(x + s * 0.5, y + s * 0.7); c.lineTo(x, y + s * 1.1); c.lineTo(x - s * 0.5, y + s * 0.7); c.lineTo(x - s, y + s * 1.1); c.closePath(); c.fill(); };
+    for (const pt of swarmPts) { const [x, y, p] = at(pt, h), [px, py] = at(pt, h - 1); c.fillStyle = `hsl(${pt.hue},95%,${72 + 14 * p}%)`;
+      if (p < 1 && h > pt.d) for (let i = 1; i <= 4; i++) { c.globalAlpha = 0.16; ghost(x + (px - x) * i * 0.6, y + (py - y) * i * 0.6, 4.6); }
+      c.globalAlpha = h < pt.d ? 0 : 0.95; ghost(x, y, 4.6); }
+    // a short white flash when the word locks in, then a faint solid word behind the ghosts
+    const k = clamp((h - 34) / 5), fl = k * (0.16 + 0.7 * (1 - clamp((h - 39) / 16)));
+    if (fl > 0) { c.save(); c.globalAlpha = fl; c.font = fontOf(SIZE, 700); c.textAlign = 'center'; c.letterSpacing = TRACK + 'px'; c.shadowColor = '#fff'; c.shadowBlur = 40; c.fillStyle = '#fff'; c.fillText('SWARM', 540 + TRACK / 2, BASE); c.restore(); c.letterSpacing = '0px'; }
+    c.globalAlpha = 1;
+  }
+
   function draw(f) {
     const g = f - sceneStart;
     c.setTransform(SCALE, 0, 0, SCALE, 0, 0); c.globalAlpha = 1; c.fillStyle = '#0b0d22'; c.fillRect(0, 0, W, 1080);
@@ -141,7 +159,7 @@
       rise(views[0].st.name.toUpperCase(), 1024, 968, 24, g, 30, out, DIM, 'right', 700); rise('mid-skill bots that finish', 1024, 1000, 22, g, 34, out, '#9aa0c8', 'right', 400); rise('my target ' + BAND + ' · same seed', 1024, 1030, 22, g, 38, out, '#9aa0c8', 'right', 400);
       tag('bots at ×8 speed', W - 20, 786);
     } else {                                              // 240 frames: the loop and the result, then the last card
-      const A = 168;                                      // frames of the first part
+      const A = 156;                                      // frames of the first part
       if (g < A) { const out = A - 12;
         rule(56, 60, 190, g, 2, out, GOLD);
         line([['I SET ', 300], ['THE DIFFICULTY.', 700]], 56, 138, 70, g, { in: 3, out });
@@ -161,12 +179,12 @@
         const x0 = 56, cw = 968, pw = cw / N, base = 960, ch = 190, q = inQ((g - out) / 8);
         if (g >= 74) { c.globalAlpha = 1 - q; ALL.forEach((u, i) => { const on = i <= shown, grow = outQ((g - 78 - i * 4) / 12), bh = Math.max(6, ch * u.metrics.inBand / 8 * (on ? grow : 0)); c.fillStyle = !on ? 'rgba(255,255,255,.07)' : u.metrics.inBand === 8 ? GREEN : 'rgba(93,242,160,.55)'; c.beginPath(); c.roundRect(x0 + i * pw + 8, base - bh, pw - 16, bh, 5); c.fill(); put(fontOf(20, i === shown ? 700 : 400), 'v' + u.version, x0 + i * pw + pw / 2, base + 30, i === shown ? '#fff' : '#7d83b0', 'center'); }); c.globalAlpha = 1; }
         rise('Target: ' + BAND + ' of mid-skill bots finish each stage. Some stages got easier, some got harder.', 56, 1040, 21, g, 100, out, '#9aa0c8', 'left', 400);
-      } else { const h = g - A;                           // the last card: plain, centred
-        title('HUNDRED GHOSTS', 540, 470, 96, h, 4);
-        rule(390, 506, 300, h, 14, 1e9, GOLD);
-        line([['PLAY IT. ', 700], ['BEAT THE BOTS.', 300]], 540, 600, 44, h, { in: 18, align: 'center' });
-        rise('HUNDRED-GHOSTS.VERCEL.APP', 540, 668, 30, h, 30, 1e9, GOLD, 'center', 700);
-        rise('Bots are scripts with noise, not people. The target is my choice.', 540, 1030, 21, h, 38, 1e9, '#7d83b0', 'center', 400);
+      } else { const h = g - A;                           // the last card: small ghosts fly in and form the word SWARM
+        swarmCard(h);
+        rule(440, 612, 200, h, 40, 1e9, GOLD);
+        line([['COMMENT ', 300], ['SWARM', 700, GOLD]], 540, 684, 46, h, { in: 42, align: 'center' });
+        rise("AND I'LL DM YOU THE CLAUDE SKILL", 540, 730, 24, h, 50, 1e9, DIM, 'center', 700);
+        rise('Bots are scripts with noise, not people. The target is my choice.', 540, 1030, 21, h, 56, 1e9, '#7d83b0', 'center', 400);
       }
     }
   }

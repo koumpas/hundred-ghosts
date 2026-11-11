@@ -4,6 +4,8 @@ An original browser obstacle-course platformer that tests itself with 100 script
 
 Play it: https://hundred-ghosts.vercel.app · History viewer: https://hundred-ghosts.vercel.app/viewer.html
 
+The method is also a Claude skill that you can use for your own game: https://github.com/koumpas/swarm-playtest
+
 All numbers in this file come from `log/*.json` and `git`. `tools/export.mjs` and `tools/verify.mjs` make them again.
 
 ## How to run
@@ -29,7 +31,7 @@ The two install steps are necessary only for the measurement tools. The game its
 | `index.html?mode=replay&a=1&b=12&stage=2&speed=4` | Two versions, top and bottom, same seed. |
 | `index.html?mode=play&auto=1` | A top-skill bot plays through the human input path. |
 | `viewer.html` | Split-screen history, v1 to v12, 40.8 s. Options: `?per=3.3&speed=8`. `R` starts it again. |
-| `post.html` | Square cut for a social video (27.2 s, 17 bars at 150 BPM). All text is motion graphics: words slide in with motion blur, rules wipe in, numbers count up. `?scale=2` draws it at 2160x2160; `?font=phosphate` uses the older headline font. Render: `SCALE=2 node tools/render-post.mjs video/master-2160-silent.mp4`, then mux `video/music-final.wav` with ffmpeg. The music is a generated instrumental track (ElevenLabs Music v2.5 through fal), with four of its own bars repeated to reach the end and set to about -15.5 LUFS; `tools/music.py` is an older track made in code and is not used. Outputs: `video/hundred-ghosts-post.mp4` (1080x1080, for upload) and `video/hundred-ghosts-post-2160.mp4` (master). |
+| `post.html` | Square cut for a social video (27.2 s, 17 bars at 150 BPM). All text is motion graphics. `?scale=2` draws it at 2160x2160. Render without sound: `SCALE=2 node tools/render-post.mjs out.mp4` (needs ffmpeg). The rendered video and the music are not in this repository. |
 
 Controls: arrow keys or A/D to move, Space / Z / Up to jump, R to restart a stage, Esc for the menu. On a touch screen: two buttons at the bottom left, JUMP at the bottom right.
 
