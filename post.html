@@ -48,7 +48,7 @@
     if (p.alive && this.respawn === 0 && !p.done) R.drawPlayer(c, p, this.t, this.sq + Math.max(-0.3, Math.min(0.3, -p.vy * 0.02))); c.restore(); };
 
   // ---- timeline (frames at 30 fps) ----
-  const S1 = 126, CLIPS = [[2, 24, 46], [5, 16, 46]], S2 = CLIPS.reduce((a, k) => a + k[2], 0), S3 = 120, TICK = 8, HOLD = 66, S4 = Q.get('versions') === '1' ? (N - 1) * TICK + HOLD + 24 : 0, S5 = 126, S6 = 114;
+  const S1 = 126, CLIPS = [[2, 24, 46], [5, 16, 46]], S2 = CLIPS.reduce((a, k) => a + k[2], 0), S3 = 120, TICK = 8, HOLD = 66, S4 = Q.get('versions') === '1' ? (N - 1) * TICK + HOLD + 24 : 0, S5 = 126, S6 = 156;
   const T2 = S1, T3 = T2 + S2, T4 = T3 + S3, T5 = T4 + S4, T6 = T5 + S5, TOTAL = T6 + S6;
   let scene = null, views = null, play = null;
   function setup(f) {
@@ -92,10 +92,19 @@
       D('SAME STAGE. SAME SEED.', 540, 900, 80, '#fff', 'center', 1000); D(a + '%', 300, 1020, 120, '#ff8fa0', 'center'); D('→', 540, 1006, 90, '#7d83b0', 'center'); D(b + '%', 790, 1020, 120, '#5df2a0', 'center');
       F('finish', 540, 1056, 24, '#9aa0c8', 'center', 500); tag('×8 speed', W - 20, 384);
     } else {
-      D('I BUILT IT WITH FABLE 5.2.', 540, 170, 78, '#fff', 'center', 1000); D('IT PLAYED ITSELF UNTIL IT WAS FAIR.', 540, 256, 78, '#ffe27a', 'center', 1000);
-      D(FIRST.metrics.inBand + ' OF 8  →  ' + LAST.metrics.inBand + ' OF 8', 540, 520, 130, '#5df2a0', 'center', 1000); F('stages where 60–80% of mid-skill bots finish', 540, 572, 30, '#c9cdf5', 'center', 500);
-      D(H.totals.botRuns.toLocaleString('en') + ' BOT RUNS · ' + N + ' VERSIONS', 540, 760, 76, '#fff', 'center', 1000);
-      F('Bots are scripts with noise. No human playtest yet.', 540, 1020, 26, '#7d83b0', 'center', 500);
+      // end card: the loop (play, measure, fix), its real counts, and the result growing version by version
+      const g = f - T6;
+      D('100 BOTS FIND THE PROBLEMS.', 540, 104, 74, '#fff', 'center', 1000); D('FABLE 5.2 FIXES THEM.', 540, 184, 74, '#ffe27a', 'center', 1000);
+      const steps = [['PLAY', H.totals.botRuns.toLocaleString('en'), 'bot runs', '#6ec6ff'], ['MEASURE', 'EVERY DEATH', 'and who finishes', '#ff5d73'], ['FIX', N + ' COMMITS', 'one for each version', '#5df2a0']];
+      steps.forEach((r, i) => { const x = 60 + i * 330; c.fillStyle = 'rgba(255,255,255,.06)'; c.beginPath(); c.roundRect(x, 250, 300, 220, 18); c.fill(); c.fillStyle = r[3]; c.beginPath(); c.roundRect(x, 250, 300, 10, 5); c.fill();
+        D(r[0], x + 150, 340, 62, r[3], 'center', 270); D(r[1], x + 150, 410, 50, '#fff', 'center', 270); F(r[2], x + 150, 446, 23, '#9aa0c8', 'center', 500);
+        if (i < 2) D('→', x + 315, 378, 54, '#7d83b0', 'center'); });
+      F('then again, with the same seeds', 540, 510, 24, '#7d83b0', 'center', 500);
+      const k = Math.min(1, g / 60), shown = Math.min(N - 1, Math.floor(k * N)), cur = ALL[shown], x0 = 90, cw = 900, pw = cw / N, base = 900, ch = 190;
+      D('STAGES IN BALANCE', 540, 610, 56, '#fff', 'center'); D(FIRST.metrics.inBand + ' OF 8', 250, 690, 70, '#ff8fa0', 'center'); D('→', 540, 682, 60, '#7d83b0', 'center'); D(cur.metrics.inBand + ' OF 8', 830, 690, 70, cur.metrics.inBand === 8 ? '#5df2a0' : '#fff', 'center');
+      ALL.forEach((u, i) => { const on = i <= shown, bh = ch * u.metrics.inBand / 8; c.fillStyle = !on ? 'rgba(255,255,255,.07)' : u.metrics.inBand === 8 ? '#5df2a0' : 'rgba(93,242,160,.55)'; c.beginPath(); c.roundRect(x0 + i * pw + 8, base - Math.max(bh, 6), pw - 16, Math.max(bh, 6), 6); c.fill(); F('v' + u.version, x0 + i * pw + pw / 2, base + 30, 21, i === shown ? '#fff' : '#7d83b0', 'center'); });
+      F('In balance: 60–80% of mid-skill bots finish the stage. Not too hard, not too easy.', 540, 980, 23, '#c9cdf5', 'center', 500);
+      F('Bots are scripts with noise. No human playtest yet.', 540, 1040, 22, '#7d83b0', 'center', 500);
     }
   }
   window.__post = { total: TOTAL, fps: FPS, frame(f) { setup(f); step(); draw(f); return f + 1 < TOTAL; } };
