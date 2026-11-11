@@ -9,63 +9,101 @@
 <canvas id="c" width="1080" height="1080"></canvas>
 <script src="render.js"></script>
 <script>
-// Short square cut of the history for a social video. Same rule as viewer.html: every number and
-// every text line comes from log/history.json, and the game area runs versions/vN.js live.
+// Square cut of the story for a social video.
+//   1. the game itself (one ghost, normal play)   2. the system (100 bots)   3. some of the versions
+//   4. v1 against the last version, same seed      5. end card
+// Every number, commit title and diff line comes from log/history.json; the game areas run versions/vN.js live.
 // ?v=1,3,6,7,12 picks the versions; ?capture=1 lets tools/render-post.mjs drive it frame by frame.
+// Headline font: Phosphate (a macOS system font). Other systems fall back to Impact.
 (async function () {
   const Q = new URLSearchParams(location.search), SPEED = +(Q.get('speed') || 8), SEED = 101, FPS = 30, CAP = Q.get('capture') === '1';
   const H = await (await fetch('log/history.json', { cache: 'no-store' })).json(), ALL = H.versions, N = ALL.length, LAST = ALL[N - 1];
   const PICK = (Q.get('v') || '1,3,6,7,12').split(',').map(x => ALL.find(v => v.version === +x)).filter(Boolean);
   const need = [...new Set([1, LAST.version, ...PICK.map(v => v.version)])];
   await Promise.all(need.map(n => new Promise((ok, bad) => { const s = document.createElement('script'); s.src = 'versions/v' + n + '.js'; s.onload = ok; s.onerror = bad; document.head.appendChild(s); })));
-  const R = HGRender, T = R.text, cv = document.getElementById('c'), c = cv.getContext('2d'), W = 1080, GH = 608, MONO = 'ui-monospace, "SF Mono", Menlo, monospace';
-  const A_FR = 150, B_FR = 96, C_FR = 110, TOTAL = A_FR + PICK.length * B_FR + C_FR;
-  function wrap(s, x, y, maxW, size, col, weight, lh, maxLines) { c.font = `${weight} ${size}px ${R.FONT}`; const words = s.split(' '); let line = '', n = 0; for (const w of words) { const t = line ? line + ' ' + w : w; if (c.measureText(t).width > maxW && line) { if (++n === maxLines) { T(c, line.replace(/.{3}$/, '') + '…', x, y, size, col, 'left', weight); return y; } T(c, line, x, y, size, col, 'left', weight); y += lh; line = w; } else line = t; } T(c, line, x, y, size, col, 'left', weight); return y; }
+  const DISP = '"Phosphate", "Impact", "Arial Black", sans-serif', BODY = '"Futura", "Avenir Next", "Segoe UI", sans-serif', MONO = 'ui-monospace, "SF Mono", Menlo, monospace';
+  try { await Promise.all([document.fonts.load('80px Phosphate'), document.fonts.load('700 30px Futura')]); } catch (e) {}
+  const R = HGRender, cv = document.getElementById('c'), c = cv.getContext('2d'), W = 1080, GH = 608, API = HG_VERSIONS[LAST.version];
+  const put = (font, s, x, y, col, align) => { c.font = font; c.fillStyle = col; c.textAlign = align || 'left'; c.textBaseline = 'alphabetic'; c.fillText(s, x, y); };
+  const D = (s, x, y, size, col, align) => put(`${size}px ${DISP}`, s, x, y, col, align);            // headline
+  const F = (s, x, y, size, col, align, wt) => put(`${wt || 700} ${size}px ${BODY}`, s, x, y, col, align); // body
+  function wrap(s, x, y, maxW, size, col, lh, maxLines) { c.font = `700 ${size}px ${BODY}`; let line = '', n = 0; for (const w of s.split(' ')) { const t = line ? line + ' ' + w : w; if (c.measureText(t).width > maxW && line) { if (++n === maxLines) { F(line.replace(/.{2}$/, '') + '…', x, y, size, col); return y; } F(line, x, y, size, col); y += lh; line = w; } else line = t; } F(line, x, y, size, col); return y; }
   function mono(s, x, y, size, col, maxW) { c.font = `600 ${size}px ${MONO}`; while (c.measureText(s).width > maxW && s.length > 8) s = s.slice(0, -2); c.fillStyle = col; c.textAlign = 'left'; c.fillText(s, x, y); }
   function pickStage(v) { const i = ALL.indexOf(v), m = v.metrics.mid; if (i === 0) return m.indexOf(Math.min(...m)); const p = ALL[i - 1].metrics.mid; let b = 0, d = -1; m.forEach((x, s) => { const dd = Math.abs(x - p[s]); if (dd > d) { d = dd; b = s; } }); return b; }
-  function chart(x, y, w, h, curV) { const pw = w / N; ALL.forEach((v, i) => { const on = v.version <= curV, bh = (h - 22) * v.metrics.inBand / 8; c.fillStyle = on ? (v.metrics.inBand === 8 ? '#5df2a0' : 'rgba(93,242,160,.5)') : 'rgba(255,255,255,.07)'; c.fillRect(x + i * pw + 5, y + h - 22 - bh, pw - 10, Math.max(bh, 2)); T(c, 'v' + v.version, x + i * pw + pw / 2, y + h - 3, 15, v.version === curV ? '#fff' : '#7d83b0', 'center', v.version === curV ? 900 : 600); if (on) T(c, v.metrics.inBand + '', x + i * pw + pw / 2, y + h - 27 - bh, 15, '#5df2a0', 'center', 800); }); }
-  const speedTag = y => { R.panel(c, W - 250, y, 230, 34, 0.85); T(c, '▶▶ sim ×' + SPEED + ' speed', W - 135, y + 24, 18, '#ffe27a', 'center', 800); };
-  // map a diff hunk to a stage: line numbers of the build('...') blocks in that version's file
   const SRC = {}; await Promise.all(PICK.map(async v => { const t = await (await fetch('versions/v' + v.version + '.js')).text(); SRC[v.version] = t.split('\n').map((l, i) => /^\s*build\('/.test(l) ? i + 1 : 0).filter(Boolean); }));
   function hunkFor(v, stage) { const hs = v.git.simDiff; if (!hs.length) return null; const st = SRC[v.version], lo = st[stage], hi = st[stage + 1] || 1e9;
     const inStage = hs.filter(h => { const n = +(/\+(\d+)/.exec(h.hunk) || [])[1]; return n >= lo && n < hi; }); const pool = inStage.length ? inStage : hs;
     return pool.slice().sort((a, b) => (a.del.length + a.add.length) - (b.del.length + b.add.length))[0]; }
-  let scene = null, views = null, fr = 0;
+  function chart(x, y, w, h, curV) { const pw = w / N; ALL.forEach((v, i) => { const on = v.version <= curV, bh = (h - 22) * v.metrics.inBand / 8; c.fillStyle = on ? (v.metrics.inBand === 8 ? '#5df2a0' : 'rgba(93,242,160,.5)') : 'rgba(255,255,255,.07)'; c.fillRect(x + i * pw + 5, y + h - 22 - bh, pw - 10, Math.max(bh, 2)); F('v' + v.version, x + i * pw + pw / 2, y + h - 3, 15, v.version === curV ? '#fff' : '#7d83b0', 'center'); if (on) F(v.metrics.inBand + '', x + i * pw + pw / 2, y + h - 27 - bh, 15, '#5df2a0', 'center'); }); }
+
+  // ---- normal play: one ghost, driven by the top-skill bot through the same step() a person uses ----
+  const Z = 1.7, OY = 1120 - 544 * Z, VIEWW = W / Z;
+  function Play(stage, skip) { this.stage = stage; this.st = API.STAGES[stage]; this.t = 0; this.deaths = 0; this.parts = new R.Particles(); this.sq = 0; this.shake = 0; this.respawn = 0; this.cam = 0; this.spawn(); for (let i = 0; i < skip; i++) this.step(); this.cam = this.target(); }
+  Play.prototype.spawn = function () { this.p = API.newPlayer(this.st); this.bot = API.makeBot(99, 100, SEED + this.stage + this.deaths * 7); this.bot.start = 0; this.bot.next = this.t; };
+  Play.prototype.target = function () { return Math.max(0, Math.min(this.st.W * API.T - VIEWW, this.p.x - VIEWW * 0.36)); };
+  Play.prototype.step = function () { const p = this.p; this.parts.update(); this.sq *= 0.82; this.shake *= 0.85;
+    if (this.respawn > 0) { this.t++; if (--this.respawn === 0) this.spawn(); return; } if (p.done) { this.t++; return; }
+    API.botStep(this.st, this.bot, p, this.t); const fx = p.x + 9, fy = p.y + 26;
+    if (p.ev & 1) { this.sq = -0.5; this.parts.burst(fx, fy, 5, '#dfe2ff', 1.6, 16); } if (p.ev & 2) { this.sq = 0.6; this.parts.burst(fx, fy, 6, '#dfe2ff', 1.8, 16); } if (p.ev & 4) { this.sq = -0.9; this.parts.burst(fx, fy, 12, '#7cff6b', 3.5, 24); this.shake = 3; }
+    if (!p.alive) { this.deaths++; this.shake = 11; this.parts.burst(fx, Math.min(p.y + 13, 530), 26, '#ff5d73', 5, 40); this.respawn = 40; } else if (p.done) this.parts.burst(this.st.goalX, this.st.goalY - 40, 40, '#ffe27a', 5, 50);
+    this.t++; this.cam += (this.target() - this.cam) * 0.14; };
+  Play.prototype.draw = function () { const p = this.p, sh = this.shake > 0.4 ? this.shake : 0; R.drawBackdrop(c, this.st, this.cam, W, 1080);
+    c.save(); c.translate(Math.sin(this.t * 1.9) * sh, OY + Math.cos(this.t * 2.3) * sh); c.scale(Z, Z); c.translate(-this.cam, 0); R.drawWorld(c, API, this.st, this.t, this.cam, VIEWW, { cr: p.cr }); this.parts.draw(c);
+    if (p.alive && this.respawn === 0 && !p.done) R.drawPlayer(c, p, this.t, this.sq + Math.max(-0.3, Math.min(0.3, -p.vy * 0.02))); c.restore(); };
+
+  // ---- timeline (frames at 30 fps) ----
+  const CLIPS = [[0, 0, 132], [2, 20, 72], [5, 16, 72]]; // stage index, frames to skip, length
+  const G_FR = CLIPS.reduce((a, k) => a + k[2], 0), S_FR = 112, B_FR = 78, A_FR = 132, C_FR = 112, TITLE = 78;
+  const T_S = G_FR, T_B = T_S + S_FR, T_A = T_B + PICK.length * B_FR, T_C = T_A + A_FR, TOTAL = T_C + C_FR;
+  let scene = null, views = null, play = null;
   function setup(f) {
-    let key; if (f < A_FR) key = 'A'; else if (f < A_FR + PICK.length * B_FR) key = 'B' + Math.floor((f - A_FR) / B_FR); else key = 'C';
+    let key; if (f < G_FR) { let a = 0, k = 0; for (; k < CLIPS.length; k++) { if (f < a + CLIPS[k][2]) break; a += CLIPS[k][2]; } key = 'G' + k; } else if (f < T_B) key = 'S'; else if (f < T_A) key = 'B' + Math.floor((f - T_B) / B_FR); else if (f < T_C) key = 'A'; else key = 'C';
     if (key === scene) return; scene = key;
-    if (key === 'A') views = [new R.SwarmView(HG_VERSIONS[1], 1, SEED, {}), new R.SwarmView(HG_VERSIONS[LAST.version], 1, SEED, {})];
+    if (key[0] === 'G') { const k = CLIPS[+key.slice(1)]; play = new Play(k[0], k[1]); }
+    else if (key === 'S') views = [new R.SwarmView(API, 0, SEED, { bars: LAST.metrics.mid })];
     else if (key[0] === 'B') { const v = PICK[+key.slice(1)]; views = [new R.SwarmView(HG_VERSIONS[v.version], pickStage(v), SEED, { bars: v.metrics.mid })]; views.v = v; }
+    else if (key === 'A') views = [new R.SwarmView(HG_VERSIONS[1], 1, SEED, {}), new R.SwarmView(API, 1, SEED, {})];
   }
-  function step(steps) { if (scene !== 'C') views.forEach(v => v.update(steps)); }
+  function step() { if (scene[0] === 'G') { play.step(); play.step(); } else if (scene === 'S') views[0].update(8); else if (scene !== 'C') views.forEach(v => v.update(SPEED * 2)); }
+  const pill = (x, y, w, h, a) => { c.fillStyle = `rgba(8,10,28,${a})`; c.beginPath(); c.roundRect(x, y, w, h, 14); c.fill(); };
   function draw(f) {
-    c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = '#0b0d22'; c.fillRect(0, 0, W, 1080);
-    if (scene === 'A') {
-      views[0].draw(c, 0, 0, W, 303, { versionLabel: 1, accent: '#ff8fa0' }); views[1].draw(c, 0, 305, W, 303, { versionLabel: LAST.version, accent: '#5df2a0' }); c.fillStyle = '#fff'; c.fillRect(0, 303, W, 2);
-      T(c, 'Claude Fable 5.2 built this game.', 40, 690, 46, '#fff', 'left', 900); T(c, 'Then 100 bots played it, and it fixed what they found.', 40, 742, 33, '#c9cdf5', 'left', 700);
-      const a = Math.round(views[0].midPct()), b = Math.round(views[1].midPct());
-      T(c, 'v1', 40, 900, 100, '#ff8fa0', 'left', 900); T(c, a + '%', 190, 900, 100, '#fff', 'left', 900); T(c, '→', 470, 890, 70, '#7d83b0', 'center', 900); T(c, 'v' + LAST.version, 540, 900, 100, '#5df2a0', 'left', 900); T(c, b + '%', 1040, 900, 100, '#fff', 'right', 900);
-      T(c, 'mid-skill bots that finish stage 2 · same seed ' + SEED + ' · same 100 bot skill profiles', 40, 952, 23, '#9aa0c8', 'left', 700); speedTag(1010);
-      T(c, 'top: first version · bottom: version ' + LAST.version, 40, 1034, 22, '#7d83b0', 'left', 700);
+    c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1; c.fillStyle = '#0b0d22'; c.fillRect(0, 0, W, 1080);
+    if (scene[0] === 'G') {
+      play.draw();
+      const a = f < TITLE ? 1 : Math.max(0, 1 - (f - TITLE) / 14); // title card over the running game, then it clears
+      if (a > 0) { c.globalAlpha = a; c.fillStyle = 'rgba(6,7,22,.72)'; c.fillRect(0, 0, W, 1080); D('I MADE THIS GAME', 540, 470, 118, '#fff', 'center'); D('WITH FABLE 5.2.', 540, 590, 118, '#ffe27a', 'center'); F('It is called Hundred Ghosts.', 540, 660, 34, '#c9cdf5', 'center', 500); c.globalAlpha = 1; }
+      if (a < 1) { c.globalAlpha = 1 - a; D('HUNDRED GHOSTS', 44, 104, 76, '#fff'); F('stage ' + (play.stage + 1) + ' of 8 · ' + play.st.name, 48, 148, 30, '#ffe27a');
+        pill(40, 962, 1000, 82, 0.82); F('I made this game with Fable 5.2.', 540, 1016, 42, '#fff', 'center'); c.globalAlpha = 1; }
+    } else if (scene === 'S') {
+      views[0].draw(c, 0, 0, W, GH, { full: true, speed: 4, versionLabel: LAST.version });
+      D('THEN I BUILT A SYSTEM', 40, 706, 84, '#fff'); D('TO IMPROVE IT.', 40, 790, 84, '#ff7ad9');
+      [['1', '100 bots play every stage, each with a different skill.'], ['2', 'The game marks every death in red and counts who finishes.'], ['3', 'Fable 5.2 reads the numbers, changes the game, and commits.']].forEach((r, i) => { const y = 858 + i * 50; c.fillStyle = '#ff7ad9'; c.beginPath(); c.arc(60, y - 10, 19, 0, 7); c.fill(); F(r[0], 60, y - 1, 24, '#10122c', 'center'); F(r[1], 96, y, 29, '#e6e8ff', 'left', 500); });
+      F('Repeat until 60–80% of mid-skill bots finish every stage.', 40, 1036, 25, '#ffe27a');
     } else if (scene[0] === 'B') {
       const v = views.v, i = ALL.indexOf(v), prev = i ? ALL[i - 1] : null; views[0].draw(c, 0, 0, W, GH, { full: true, speed: SPEED, versionLabel: v.version });
-      T(c, 'v' + v.version, 36, 770, 150, '#ff7ad9', 'left', 900); T(c, 'version ' + v.version + ' of ' + N, 40, 808, 22, '#9aa0c8', 'left', 700);
-      const band = v.metrics.inBand, bc = band === 8 ? '#5df2a0' : band >= 4 ? '#ffb347' : '#ff5d73'; c.fillStyle = bc; c.beginPath(); c.roundRect(40, 826, 250, 44, 8); c.fill(); T(c, band + '/8 stages fair', 165, 857, 24, '#10122c', 'center', 900);
-      let y = wrap(v.git.subject, 330, 668, 715, 31, '#fff', 800, 38, 3) + 44;
-      const h = hunkFor(v, views[0].stageIndex); if (h) { if (h.del) { mono('- ' + h.del, 330, y, 22, '#ff8fa0', 715); y += 30; } if (h.add) { mono('+ ' + h.add, 330, y, 22, '#7df5b4', 715); y += 30; } } else { mono('first commit', 330, y, 22, '#7d83b0', 715); y += 30; }
-      const d = prev && prev.panelScore != null ? v.panelScore - prev.panelScore : null; y = Math.max(y + 14, 846);
-      T(c, 'playtesters ' + v.panelScore.toFixed(1) + ' / 10', 330, y, 30, '#ffe27a', 'left', 900); if (d != null) T(c, (d >= 0 ? '▲ ' : '▼ ') + Math.abs(d).toFixed(1), 660, y, 30, d >= 0 ? '#5df2a0' : '#ff5d73', 'left', 900);
-      chart(40, 900, 1000, 150, v.version); T(c, 'stages in the 60–80% pass band, by version (showing ' + PICK.length + ' of ' + N + ')', 40, 896, 16, '#7d83b0', 'left', 700);
+      D('V' + v.version, 36, 780, 176, '#ff7ad9'); F('version ' + v.version + ' of ' + N, 40, 816, 22, '#9aa0c8');
+      const band = v.metrics.inBand, bc = band === 8 ? '#5df2a0' : band >= 4 ? '#ffb347' : '#ff5d73'; c.fillStyle = bc; c.beginPath(); c.roundRect(40, 832, 262, 44, 8); c.fill(); F(band + ' of 8 stages fair', 171, 863, 24, '#10122c', 'center');
+      let y = wrap(v.git.subject, 340, 668, 705, 30, '#fff', 38, 3) + 44;
+      const h = hunkFor(v, views[0].stageIndex); if (h) { if (h.del) { mono('- ' + h.del, 340, y, 22, '#ff8fa0', 705); y += 30; } if (h.add) { mono('+ ' + h.add, 340, y, 22, '#7df5b4', 705); y += 30; } } else { mono('first commit', 340, y, 22, '#7d83b0', 705); y += 30; }
+      const d = prev && prev.panelScore != null ? v.panelScore - prev.panelScore : null; y = Math.max(y + 14, 852);
+      F('playtesters ' + v.panelScore.toFixed(1) + ' / 10', 340, y, 30, '#ffe27a'); if (d != null) F((d >= 0 ? '▲ ' : '▼ ') + Math.abs(d).toFixed(1), 690, y, 30, d >= 0 ? '#5df2a0' : '#ff5d73');
+      chart(40, 906, 1000, 150, v.version); F('stages in the 60–80% pass band, by version (showing ' + PICK.length + ' of ' + N + ')', 40, 902, 16, '#7d83b0');
+    } else if (scene === 'A') {
+      views[0].draw(c, 0, 0, W, 303, { versionLabel: 1, accent: '#ff8fa0' }); views[1].draw(c, 0, 305, W, 303, { versionLabel: LAST.version, accent: '#5df2a0' }); c.fillStyle = '#fff'; c.fillRect(0, 303, W, 2);
+      D('SAME STAGE. SAME SEED.', 40, 704, 78, '#fff'); F('Top: the first version. Bottom: version ' + LAST.version + '.', 40, 752, 30, '#c9cdf5', 'left', 500);
+      const a = Math.round(views[0].midPct()), b = Math.round(views[1].midPct());
+      D('V1', 40, 912, 124, '#ff8fa0'); D(a + '%', 200, 912, 124, '#fff'); D('→', 500, 900, 90, '#7d83b0', 'center'); D('V' + LAST.version, 570, 912, 124, '#5df2a0'); D(b + '%', 1040, 912, 124, '#fff', 'right');
+      F('mid-skill bots that finish stage 2 · seed ' + SEED + ' · same 100 bot skill profiles', 40, 966, 23, '#9aa0c8'); pill(W - 250, 1006, 230, 38, 0.85); F('▶▶ sim ×' + SPEED + ' speed', W - 135, 1032, 19, '#ffe27a', 'center');
     } else {
-      const a = ALL[0]; T(c, 'v1', 300, 300, 150, '#ff8fa0', 'center', 900); T(c, '→', 540, 285, 110, '#7d83b0', 'center', 900); T(c, 'v' + LAST.version, 790, 300, 150, '#5df2a0', 'center', 900);
-      const rows = [[`${a.metrics.inBand}/8 → ${LAST.metrics.inBand}/8`, 'stages in the fair band (60–80% of mid-skill bots finish)'], [`${a.panelScore.toFixed(1)} → ${LAST.panelScore.toFixed(1)}`, 'playtester panel score out of 10'], [H.totals.botRuns.toLocaleString('en'), 'bot runs'], [N + ' commits', 'each with its measurement in the message']];
-      rows.forEach((r, k) => { T(c, r[0], 540, 440 + k * 128, 78, '#fff', 'center', 900); T(c, r[1], 540, 478 + k * 128, 24, '#9aa0c8', 'center', 700); });
-      T(c, 'Bots are scripts with noise. Reviewers are AI subagents. No human playtest yet.', 540, 1010, 22, '#7d83b0', 'center', 700); T(c, 'HUNDRED GHOSTS', 540, 130, 44, '#ffe27a', 'center', 900);
+      const a = ALL[0]; D('I MADE IT WITH FABLE 5.2.', 540, 120, 70, '#fff', 'center'); D('THE SYSTEM MADE IT FAIR.', 540, 200, 70, '#ffe27a', 'center');
+      D('V1', 330, 370, 150, '#ff8fa0', 'center'); D('→', 540, 352, 100, '#7d83b0', 'center'); D('V' + LAST.version, 760, 370, 150, '#5df2a0', 'center');
+      const rows = [[`${a.metrics.inBand} OF 8 → ${LAST.metrics.inBand} OF 8`, 'stages in the fair band (60–80% of mid-skill bots finish)'], [`${a.panelScore.toFixed(1)} → ${LAST.panelScore.toFixed(1)}`, 'playtester panel score out of 10'], [H.totals.botRuns.toLocaleString('en'), 'bot runs'], [N + ' COMMITS', 'each with its measurement in the message']];
+      rows.forEach((r, k) => { D(r[0], 540, 500 + k * 124, 80, '#fff', 'center'); F(r[1], 540, 538 + k * 124, 24, '#9aa0c8', 'center', 500); });
+      F('Bots are scripts with noise. Reviewers are AI subagents. No human playtest yet.', 540, 1030, 22, '#7d83b0', 'center', 500);
     }
   }
-  // capture mode: one call = one 30 fps video frame (2 x SPEED sim steps)
-  window.__post = { total: TOTAL, fps: FPS, frame(f) { setup(f); step(SPEED * 2); draw(f); return f + 1 < TOTAL; } };
-  if (!CAP) { let f = 0, acc = 0, last = 0; const loop = now => { acc += last ? now - last : 0; last = now; while (acc >= 1000 / FPS) { acc -= 1000 / FPS; if (f < TOTAL) { setup(f); step(SPEED * 2); f++; } } if (acc > 200) acc = 0; draw(f); requestAnimationFrame(loop); }; addEventListener('keydown', e => { if (e.code === 'KeyR') { f = 0; scene = null; } }); requestAnimationFrame(loop); }
+  window.__post = { total: TOTAL, fps: FPS, frame(f) { setup(f); step(); draw(f); return f + 1 < TOTAL; } };
+  if (!CAP) { let f = 0, acc = 0, last = 0; const loop = now => { acc += last ? now - last : 0; last = now; while (acc >= 1000 / FPS) { acc -= 1000 / FPS; if (f < TOTAL) { setup(f); step(); f++; } } if (acc > 200) acc = 0; draw(Math.min(f, TOTAL - 1)); requestAnimationFrame(loop); }; addEventListener('keydown', e => { if (e.code === 'KeyR') { f = 0; scene = null; } }); requestAnimationFrame(loop); }
   window.__ready = true;
 })();
 </script>
