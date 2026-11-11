@@ -3,7 +3,7 @@
 // so that any old version can be replayed with the same seed.
 (function (root) {
 'use strict';
-const VERSION = 1;
+const VERSION = 2;
 const T = 32, ROWS = 17, LIMIT = 2700; // tile px, rows, stage time limit in frames (45 s at 60 Hz)
 const PH = { w: 18, h: 26, runMax: 4, accG: 0.6, accA: 0.4, fric: 0.5, airFric: 0.12,
   grav: 0.55, jumpV: 10.2, cutV: 3.5, maxFall: 12, coyote: 6, buffer: 6, padV: 15, crumble: 24 };
@@ -198,8 +198,8 @@ function step(st, p, dir, jump, t, th) {
 // noise: slow decisions, a late view of moving hazards, and an error on the jump frame.
 // Risk (0..1) sets how much timing margin the bot wants before it commits to a jump.
 let DIR = 0, JUMP = false;
-function planInput(pl, t) { DIR = pl.dir; JUMP = t >= pl.js && t < pl.he; }
-const JUMP_D = [0, 2, 4, 7, 10, 14, 19, 25], JUMP_HOLD = [6, 22];
+function planInput(pl, t) { DIR = pl.stop && t >= pl.stop ? 0 : pl.dir; JUMP = t >= pl.js && t < pl.he; }
+const JUMP_D = [0, 2, 4, 7, 10, 14, 19, 25], JUMP_HOLD = [6, 12, 22];
 function rollout(st, p0, pl, t0, lag, settle) {
   const p = clonePlayer(p0); const isJump = pl.js >= t0 && pl.he > pl.js;
   let after = -1, f = 0;
@@ -212,7 +212,7 @@ function rollout(st, p0, pl, t0, lag, settle) {
     if (acted && p.ground) after = settle;
   }
   // progress against a full-speed run; standing, going back or ending against a wall costs extra
-  return p.x - PH.runMax * f - (isJump ? 8 : 0) - (pl.dir !== 1 ? 60 : p.vx === 0 ? 100 : 0);
+  return p.x - PH.runMax * f - (isJump ? 8 : 0) - (pl.dir !== 1 ? 60 : pl.stop ? 30 : p.vx === 0 ? 100 : 0);
 }
 function makeBot(i, n, seed) {
   const rng = mulberry32(hash2(seed, i)); const skill = n > 1 ? i / (n - 1) : 0.5;
@@ -234,11 +234,17 @@ function think(st, b, p, t) {
     cands.push({ dir: -1, js: -1, he: -1, len: P });
     cands.push({ dir: -1, js: t, he: t + 22, len: 0, d: 0, k: 22 });
   }
+  if (!air) { // v2: "take a few steps and stop" (a human does this between two hazards)
+    cands.push({ dir: 1, js: -1, he: -1, len: P + 10, stop: t + P });
+    cands.push({ dir: 1, js: -1, he: -1, len: 2 * P + 10, stop: t + 2 * P });
+    // v2: no progress for 5 s -> go back about 3 tiles and try again with a run-up
+    if (t - b.at > 300) { const back = { dir: -1, js: -1, he: -1, len: 40 }; b.at = t; if (rollout(st, p, back, t, b.lag, 2) > -1e5) { b.plan = back; b.next = t + 40; return; } }
+  }
   for (const c of cands) c.score = rollout(st, p, c, t, b.lag, b.react + 1);
   // prefer a jump frame whose neighbours in the list also work (the middle of the window, not its edge)
   const bonus = (1 - b.risk) * 10;
   for (let i = 0; i < cands.length; i++) { const c = cands[i]; if (c.d === undefined || c.dir !== 1 || c.score < -1e5) continue; c.adj = 0;
-    for (const j of [i - 2, i + 2]) { const o = cands[j]; if (o && o.d !== undefined && o.dir === 1 && o.k === c.k && o.score > -1e5) c.adj += bonus; } }
+    for (const j of [i - JUMP_HOLD.length, i + JUMP_HOLD.length]) { const o = cands[j]; if (o && o.d !== undefined && o.dir === 1 && o.k === c.k && o.score > -1e5) c.adj += bonus; } }
   for (const c of cands) if (c.adj) c.score += c.adj;
   cands.sort((a, c) => c.score - a.score);
   let pick = cands[0];
@@ -251,7 +257,7 @@ function think(st, b, p, t) {
       if (ok) { pick = c; break; }
     }
   }
-  const pl = { dir: pick.dir, js: pick.js, he: pick.he, len: pick.len };
+  const pl = { dir: pick.dir, js: pick.js, he: pick.he, len: pick.len, stop: pick.stop || 0 };
   b.next = t + P + Math.floor(b.rng() * 3);
   if (pick.d !== undefined) { // a new jump: add the timing error of this bot
     const js = Math.max(t, pick.js + Math.round(gauss(b.rng) * b.sigma));
