@@ -27,7 +27,7 @@ The two install steps are necessary only for the measurement tools. The game its
 | `index.html?mode=replay&a=1&b=12&stage=2&speed=4` | Two versions, top and bottom, same seed. |
 | `index.html?mode=play&auto=1` | A top-skill bot plays through the human input path. |
 | `viewer.html` | Split-screen history, v1 to v12, 40.8 s. Options: `?per=3.3&speed=8`. `R` starts it again. |
-| `post.html` | Square 1080x1080 cut for a social video (20.7 s), one headline for each shot: both facts over the game and the swarm, normal play, the 100 bots, v1 against v12, end card with the loop and its counts. Headlines use Phosphate, a macOS system font. `?versions=1` adds a v1..v12 counter shot. `node tools/render-post.mjs` renders it to `video/hundred-ghosts-post.mp4` (needs ffmpeg). |
+| `post.html` | Square 1080x1080 cut for a social video (23.7 s), one headline for each shot: both facts over the game and the swarm, normal play, the 100 bots and the target, a too-hard stage made easier, a too-easy stage made harder, end card with the loop and its counts. Headlines use Phosphate, a macOS system font. `?versions=1` adds a v1..v12 counter shot. `node tools/render-post.mjs` renders it to `video/hundred-ghosts-post.mp4` (needs ffmpeg). |
 
 Controls: arrow keys or A/D to move, Space / Z / Up to jump, R to restart a stage, Esc for the menu. On a touch screen: two buttons at the bottom left, JUMP at the bottom right.
 

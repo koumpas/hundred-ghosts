@@ -8,5 +8,5 @@ const { total, fps } = await pg.evaluate(() => ({ total: __post.total, fps: __po
 for (let f = 0; f < total; f++) { await pg.evaluate(f => __post.frame(f), f); await el.screenshot({ path: path.join(tmp, String(f).padStart(5, '0') + '.png') }); if (f % 150 === 0) console.log('frame', f, '/', total); }
 await br.close(); s.srv.close();
 execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-framerate', String(fps), '-i', path.join(tmp, '%05d.png'), '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '18', '-movflags', '+faststart', out]);
-for (const k of [480, 610]) if (k < total) fs.copyFileSync(path.join(tmp, String(k).padStart(5, '0') + '.png'), path.join(path.dirname(out), `frame-${k}.png`));
+for (const k of []) if (k < total) fs.copyFileSync(path.join(tmp, String(k).padStart(5, '0') + '.png'), path.join(path.dirname(out), `frame-${k}.png`));
 fs.rmSync(tmp, { recursive: true }); console.log('wrote', path.relative(ROOT, out), (total / fps).toFixed(1) + ' s', total, 'frames', 'errors', errs.length, errs[0] || '');

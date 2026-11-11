@@ -19,7 +19,7 @@
 (async function () {
   const Q = new URLSearchParams(location.search), SEED = 101, FPS = 30, CAP = Q.get('capture') === '1';
   const H = await (await fetch('log/history.json', { cache: 'no-store' })).json(), ALL = H.versions, N = ALL.length, FIRST = ALL[0], LAST = ALL[N - 1];
-  await Promise.all([1, LAST.version].map(n => new Promise((ok, bad) => { const s = document.createElement('script'); s.src = 'versions/v' + n + '.js'; s.onload = ok; s.onerror = bad; document.head.appendChild(s); })));
+  await Promise.all([...new Set(ALL.map(v => v.version))].map(n => new Promise((ok, bad) => { const s = document.createElement('script'); s.src = 'versions/v' + n + '.js'; s.onload = ok; s.onerror = bad; document.head.appendChild(s); })));
   const DISP = '"Phosphate", "Impact", "Arial Black", sans-serif', BODY = '"Futura", "Avenir Next", "Segoe UI", sans-serif';
   try { await Promise.all([document.fonts.load('80px Phosphate'), document.fonts.load('700 30px Futura')]); } catch (e) {}
   const R = HGRender, cv = document.getElementById('c'), c = cv.getContext('2d'), W = 1080, API = HG_VERSIONS[LAST.version];
@@ -32,6 +32,9 @@
   // the version where a fix made one stage much worse (largest drop of a mid-skill pass rate), from the data
   let FAIL = { drop: 0 }; ALL.forEach((v, i) => { if (!i) return; v.metrics.mid.forEach((m, s) => { const d = ALL[i - 1].metrics.mid[s] - m; if (d > FAIL.drop) FAIL = { drop: d, i, stage: s, from: ALL[i - 1].metrics.mid[s], to: m }; }); });
 
+  const HARD = { v: FIRST, stage: FIRST.metrics.mid.indexOf(Math.min(...FIRST.metrics.mid)) };
+  let EASY = { over: 0 }; ALL.forEach(v => v.metrics.mid.forEach((m, st) => { const o = m - LAST.metrics.mid[st]; if (m > 80 && o >= EASY.over) EASY = { over: o, v, stage: st }; }));
+  const BAND = '60–80%';
   // ---- normal play: one ghost, driven by the top-skill bot through the same step() a person uses ----
   function Play(stage, skip, Z, top, h) { this.stage = stage; this.st = API.STAGES[stage]; this.Z = Z; this.top = top; this.h = h; this.vw = W / Z; this.t = 0; this.deaths = 0; this.parts = new R.Particles(); this.sq = 0; this.shake = 0; this.respawn = 0; this.spawn(); for (let i = 0; i < skip; i++) this.step(); this.cam = this.target(); }
   Play.prototype.spawn = function () { this.p = API.newPlayer(this.st); this.bot = API.makeBot(99, 100, SEED + this.stage + this.deaths * 7); this.bot.start = 0; this.bot.next = this.t; };
@@ -48,18 +51,18 @@
     if (p.alive && this.respawn === 0 && !p.done) R.drawPlayer(c, p, this.t, this.sq + Math.max(-0.3, Math.min(0.3, -p.vy * 0.02))); c.restore(); };
 
   // ---- timeline (frames at 30 fps) ----
-  const S1 = 126, CLIPS = [[2, 24, 46], [5, 16, 46]], S2 = CLIPS.reduce((a, k) => a + k[2], 0), S3 = 120, TICK = 8, HOLD = 66, S4 = Q.get('versions') === '1' ? (N - 1) * TICK + HOLD + 24 : 0, S5 = 126, S6 = 156;
+  const S1 = 126, CLIPS = [[2, 24, 46], [5, 16, 46]], S2 = CLIPS.reduce((a, k) => a + k[2], 0), S3 = 120, TICK = 8, HOLD = 66, S4 = Q.get('versions') === '1' ? (N - 1) * TICK + HOLD + 24 : 0, S5 = 216, S6 = 156;
   const T2 = S1, T3 = T2 + S2, T4 = T3 + S3, T5 = T4 + S4, T6 = T5 + S5, TOTAL = T6 + S6;
   let scene = null, views = null, play = null;
   function setup(f) {
-    let key; if (f < T2) key = '1'; else if (f < T3) key = '2' + (f - T2 < CLIPS[0][2] ? 'a' : 'b'); else if (f < T4) key = '3'; else if (f < T5) key = '4'; else if (f < T6) key = '5'; else key = '6';
+    let key; if (f < T2) key = '1'; else if (f < T3) key = '2' + (f - T2 < CLIPS[0][2] ? 'a' : 'b'); else if (f < T4) key = '3'; else if (f < T5) key = '4'; else if (f < T6) key = '5' + (f - T5 < S5 / 2 ? 'a' : 'b'); else key = '6';
     if (key === scene) return; scene = key;
     if (key === '1') { play = new Play(0, 0, 1.5, 0, 540); views = [new R.SwarmView(API, 0, SEED, {})]; }
     else if (key[0] === '2') { const k = CLIPS[key[1] === 'a' ? 0 : 1]; play = new Play(k[0], k[1], 1.7, 0, 1080); }
     else if (key === '3') views = [new R.SwarmView(API, 1, SEED, {})];
-    else if (key === '5') views = [new R.SwarmView(HG_VERSIONS[1], 1, SEED, {}), new R.SwarmView(API, 1, SEED, {})];
+    else if (key[0] === '5') { const k = key[1] === 'a' ? HARD : EASY; views = [new R.SwarmView(HG_VERSIONS[k.v.version], k.stage, SEED, {}), new R.SwarmView(API, k.stage, SEED, {})]; views.k = k; views.hard = key[1] === 'a'; }
   }
-  function step() { if (scene === '1') { play.step(); play.step(); views[0].update(6); } else if (scene[0] === '2') { play.step(); play.step(); } else if (scene === '3') views[0].update(8); else if (scene === '5') views.forEach(v => v.update(16)); }
+  function step() { if (scene === '1') { play.step(); play.step(); views[0].update(6); } else if (scene[0] === '2') { play.step(); play.step(); } else if (scene === '3') views[0].update(8); else if (scene[0] === '5') views.forEach(v => v.update(16)); }
   function versionAt(g) { // shot 4: which version is shown at local frame g, and whether it is the stop on the failed fix
     const before = FAIL.i * TICK; if (g < before) return { i: Math.floor(g / TICK), hold: false }; if (g < before + HOLD) return { i: FAIL.i, hold: true, k: (g - before) / HOLD }; return { i: Math.min(N - 1, FAIL.i + 1 + Math.floor((g - before - HOLD) / TICK)), hold: false }; }
   function draw(f) {
@@ -68,14 +71,14 @@
       play.draw(); views[0].draw(c, 0, 540, W, 540, { none: true }); c.fillStyle = '#fff'; c.fillRect(0, 538, W, 4);
       shade(0, 250, 0.85); shade(542, 270, 0.85);
       D('I BUILT THIS GAME', 540, 96, 92, '#fff', 'center', 1000); D('WITH FABLE 5.2.', 540, 186, 92, '#ffe27a', 'center', 1000);
-      D('THEN IT PLAYED ITSELF ' + H.totals.botRuns.toLocaleString('en') + ' TIMES', 540, 632, 70, '#fff', 'center', 1010); D('AND FIXED WHAT IT FOUND.', 540, 712, 70, '#ff7ad9', 'center', 1010);
+      D('I SET THE DIFFICULTY.', 540, 632, 80, '#fff', 'center', 1010); D('IT FIXED ITSELF TO MATCH.', 540, 718, 80, '#ff7ad9', 'center', 1010);
       tag('bots at ×3 speed', W - 20, 1052);
     } else if (scene[0] === '2') {
       play.draw(); shade(0, 220, 0.7); D('HUNDRED GHOSTS', 540, 110, 96, '#fff', 'center'); F('8 stages · ' + play.st.name, 540, 160, 32, '#ffe27a', 'center');
     } else if (scene === '3') {
       views[0].draw(c, 0, 0, W, 1080, { none: true }); shade(0, 300, 0.85);
       D('100 BOTS PLAY', 540, 110, 104, '#fff', 'center'); D('EVERY STAGE.', 540, 212, 104, '#fff', 'center');
-      c.fillStyle = 'rgba(8,10,28,.86)'; c.beginPath(); c.roundRect(60, 900, 960, 120, 18); c.fill(); D('RED = WHERE THEY DIE.', 540, 958, 56, '#ff5d73', 'center'); F('Fable 5.2 reads that, and fixes the stage.', 540, 1000, 30, '#e6e8ff', 'center', 500);
+      c.fillStyle = 'rgba(8,10,28,.86)'; c.beginPath(); c.roundRect(60, 900, 960, 120, 18); c.fill(); D('MY TARGET: ' + BAND + ' FINISH.', 540, 958, 56, '#ffe27a', 'center', 900); F('Red shows where they die. Fable 5.2 changes the stage to hit the target.', 540, 1000, 26, '#e6e8ff', 'center', 500);
       tag('×4 speed', W - 20, 876);
     } else if (scene === '4') {
       const s = versionAt(f - T4), v = ALL[s.i];
@@ -85,25 +88,27 @@
       else { D(v.metrics.inBand + ' OF 8 STAGES FAIR', 540, 600, 76, v.metrics.inBand === 8 ? '#5df2a0' : '#fff', 'center', 1000); }
       const x0 = 90, cw = 900, pw = cw / N, base = 990, ch = 200;
       ALL.forEach((u, i) => { const on = i <= s.i, bh = ch * u.metrics.inBand / 8; c.fillStyle = !on ? 'rgba(255,255,255,.07)' : u.metrics.inBand === 8 ? '#5df2a0' : i === FAIL.i && s.i >= FAIL.i ? '#ff5d73' : 'rgba(93,242,160,.55)'; c.beginPath(); c.roundRect(x0 + i * pw + 8, base - Math.max(bh, 6), pw - 16, Math.max(bh, 6), 6); c.fill(); F('v' + u.version, x0 + i * pw + pw / 2, base + 34, 22, i === s.i ? '#fff' : '#7d83b0', 'center'); });
-    } else if (scene === '5') {
+    } else if (scene[0] === '5') {
+      const k = views.k, hard = views.hard;
       views[0].draw(c, 0, 0, W, 398, { none: true }); views[1].draw(c, 0, 402, W, 398, { none: true }); c.fillStyle = '#fff'; c.fillRect(0, 398, W, 4);
-      const lab = (s, y, col) => { c.fillStyle = col; c.beginPath(); c.roundRect(24, y, 150, 74, 12); c.fill(); D(s, 99, y + 58, 60, '#10122c', 'center'); }; lab('V1', 22, '#ff8fa0'); lab('V' + LAST.version, 424, '#5df2a0');
+      const lab = (t, y, col) => { c.fillStyle = col; c.beginPath(); c.roundRect(24, y, 150, 74, 12); c.fill(); D(t, 99, y + 58, 60, '#10122c', 'center'); }; lab('V' + k.v.version, 22, '#ff8fa0'); lab('V' + LAST.version, 424, '#5df2a0');
       const a = Math.round(views[0].midPct()), b = Math.round(views[1].midPct());
-      D('SAME STAGE. SAME SEED.', 540, 900, 80, '#fff', 'center', 1000); D(a + '%', 300, 1020, 120, '#ff8fa0', 'center'); D('→', 540, 1006, 90, '#7d83b0', 'center'); D(b + '%', 790, 1020, 120, '#5df2a0', 'center');
-      F('finish', 540, 1056, 24, '#9aa0c8', 'center', 500); tag('×8 speed', W - 20, 384);
+      D(hard ? 'TOO HARD. IT MADE IT EASIER.' : 'TOO EASY. IT MADE IT HARDER.', 540, 896, 76, '#fff', 'center', 1000);
+      D(a + '%', 290, 1012, 116, '#ff8fa0', 'center'); D('→', 540, 998, 86, '#7d83b0', 'center'); D(b + '%', 800, 1012, 116, '#5df2a0', 'center');
+      F('of mid-skill bots finish ' + views[0].st.name + ' · my target ' + BAND + ' · same seed', 540, 1056, 23, '#9aa0c8', 'center', 500); tag('×8 speed', W - 20, 384);
     } else {
       // end card: the loop (play, measure, fix), its real counts, and the result growing version by version
       const g = f - T6;
-      D('100 BOTS FIND THE PROBLEMS.', 540, 104, 74, '#fff', 'center', 1000); D('FABLE 5.2 FIXES THEM.', 540, 184, 74, '#ffe27a', 'center', 1000);
-      const steps = [['PLAY', H.totals.botRuns.toLocaleString('en'), 'bot runs', '#6ec6ff'], ['MEASURE', 'EVERY DEATH', 'and who finishes', '#ff5d73'], ['FIX', N + ' COMMITS', 'one for each version', '#5df2a0']];
+      D('I SET THE DIFFICULTY.', 540, 104, 74, '#fff', 'center', 1000); D('FABLE 5.2 FIXED THE GAME TO MATCH.', 540, 184, 74, '#ffe27a', 'center', 1000);
+      const steps = [['PLAY', H.totals.botRuns.toLocaleString('en'), 'bot runs', '#6ec6ff'], ['MEASURE', 'WHO FINISHES', 'against my target', '#ff5d73'], ['FIX', N + ' COMMITS', 'one for each version', '#5df2a0']];
       steps.forEach((r, i) => { const x = 60 + i * 330; c.fillStyle = 'rgba(255,255,255,.06)'; c.beginPath(); c.roundRect(x, 250, 300, 220, 18); c.fill(); c.fillStyle = r[3]; c.beginPath(); c.roundRect(x, 250, 300, 10, 5); c.fill();
         D(r[0], x + 150, 340, 62, r[3], 'center', 270); D(r[1], x + 150, 410, 50, '#fff', 'center', 270); F(r[2], x + 150, 446, 23, '#9aa0c8', 'center', 500);
         if (i < 2) D('→', x + 315, 378, 54, '#7d83b0', 'center'); });
       F('then again, with the same seeds', 540, 510, 24, '#7d83b0', 'center', 500);
       const k = Math.min(1, g / 60), shown = Math.min(N - 1, Math.floor(k * N)), cur = ALL[shown], x0 = 90, cw = 900, pw = cw / N, base = 900, ch = 190;
-      D('STAGES IN BALANCE', 540, 610, 56, '#fff', 'center'); D(FIRST.metrics.inBand + ' OF 8', 250, 690, 70, '#ff8fa0', 'center'); D('→', 540, 682, 60, '#7d83b0', 'center'); D(cur.metrics.inBand + ' OF 8', 830, 690, 70, cur.metrics.inBand === 8 ? '#5df2a0' : '#fff', 'center');
+      D('STAGES ON MY TARGET', 540, 610, 56, '#fff', 'center'); D(FIRST.metrics.inBand + ' OF 8', 250, 690, 70, '#ff8fa0', 'center'); D('→', 540, 682, 60, '#7d83b0', 'center'); D(cur.metrics.inBand + ' OF 8', 830, 690, 70, cur.metrics.inBand === 8 ? '#5df2a0' : '#fff', 'center');
       ALL.forEach((u, i) => { const on = i <= shown, bh = ch * u.metrics.inBand / 8; c.fillStyle = !on ? 'rgba(255,255,255,.07)' : u.metrics.inBand === 8 ? '#5df2a0' : 'rgba(93,242,160,.55)'; c.beginPath(); c.roundRect(x0 + i * pw + 8, base - Math.max(bh, 6), pw - 16, Math.max(bh, 6), 6); c.fill(); F('v' + u.version, x0 + i * pw + pw / 2, base + 30, 21, i === shown ? '#fff' : '#7d83b0', 'center'); });
-      F('In balance: 60–80% of mid-skill bots finish the stage. Not too hard, not too easy.', 540, 980, 23, '#c9cdf5', 'center', 500);
+      F('My target: ' + BAND + ' of mid-skill bots finish each stage. Some stages got easier, some got harder.', 540, 980, 22, '#c9cdf5', 'center', 500);
       F('Bots are scripts with noise. No human playtest yet.', 540, 1040, 22, '#7d83b0', 'center', 500);
     }
   }
