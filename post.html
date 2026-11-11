@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hundred Ghosts - post cut</title>
+<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}canvas{display:block;margin:0 auto;height:100vh;aspect-ratio:1}</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1080"></canvas>
+<script src="render.js"></script>
+<script>
+// Short square cut of the history for a social video. Same rule as viewer.html: every number and
+// every text line comes from log/history.json, and the game area runs versions/vN.js live.
+// ?v=1,3,6,7,12 picks the versions; ?capture=1 lets tools/render-post.mjs drive it frame by frame.
+(async function () {
+  const Q = new URLSearchParams(location.search), SPEED = +(Q.get('speed') || 8), SEED = 101, FPS = 30, CAP = Q.get('capture') === '1';
+  const H = await (await fetch('log/history.json', { cache: 'no-store' })).json(), ALL = H.versions, N = ALL.length, LAST = ALL[N - 1];
+  const PICK = (Q.get('v') || '1,3,6,7,12').split(',').map(x => ALL.find(v => v.version === +x)).filter(Boolean);
+  const need = [...new Set([1, LAST.version, ...PICK.map(v => v.version)])];
+  await Promise.all(need.map(n => new Promise((ok, bad) => { const s = document.createElement('script'); s.src = 'versions/v' + n + '.js'; s.onload = ok; s.onerror = bad; document.head.appendChild(s); })));
+  const R = HGRender, T = R.text, cv = document.getElementById('c'), c = cv.getContext('2d'), W = 1080, GH = 608, MONO = 'ui-monospace, "SF Mono", Menlo, monospace';
+  const A_FR = 150, B_FR = 96, C_FR = 110, TOTAL = A_FR + PICK.length * B_FR + C_FR;
+  function wrap(s, x, y, maxW, size, col, weight, lh, maxLines) { c.font = `${weight} ${size}px ${R.FONT}`; const words = s.split(' '); let line = '', n = 0; for (const w of words) { const t = line ? line + ' ' + w : w; if (c.measureText(t).width > maxW && line) { if (++n === maxLines) { T(c, line.replace(/.{3}$/, '') + '…', x, y, size, col, 'left', weight); return y; } T(c, line, x, y, size, col, 'left', weight); y += lh; line = w; } else line = t; } T(c, line, x, y, size, col, 'left', weight); return y; }
+  function mono(s, x, y, size, col, maxW) { c.font = `600 ${size}px ${MONO}`; while (c.measureText(s).width > maxW && s.length > 8) s = s.slice(0, -2); c.fillStyle = col; c.textAlign = 'left'; c.fillText(s, x, y); }
+  function pickStage(v) { const i = ALL.indexOf(v), m = v.metrics.mid; if (i === 0) return m.indexOf(Math.min(...m)); const p = ALL[i - 1].metrics.mid; let b = 0, d = -1; m.forEach((x, s) => { const dd = Math.abs(x - p[s]); if (dd > d) { d = dd; b = s; } }); return b; }
+  function chart(x, y, w, h, curV) { const pw = w / N; ALL.forEach((v, i) => { const on = v.version <= curV, bh = (h - 22) * v.metrics.inBand / 8; c.fillStyle = on ? (v.metrics.inBand === 8 ? '#5df2a0' : 'rgba(93,242,160,.5)') : 'rgba(255,255,255,.07)'; c.fillRect(x + i * pw + 5, y + h - 22 - bh, pw - 10, Math.max(bh, 2)); T(c, 'v' + v.version, x + i * pw + pw / 2, y + h - 3, 15, v.version === curV ? '#fff' : '#7d83b0', 'center', v.version === curV ? 900 : 600); if (on) T(c, v.metrics.inBand + '', x + i * pw + pw / 2, y + h - 27 - bh, 15, '#5df2a0', 'center', 800); }); }
+  const speedTag = y => { R.panel(c, W - 250, y, 230, 34, 0.85); T(c, '▶▶ sim ×' + SPEED + ' speed', W - 135, y + 24, 18, '#ffe27a', 'center', 800); };
+  // map a diff hunk to a stage: line numbers of the build('...') blocks in that version's file
+  const SRC = {}; await Promise.all(PICK.map(async v => { const t = await (await fetch('versions/v' + v.version + '.js')).text(); SRC[v.version] = t.split('\n').map((l, i) => /^\s*build\('/.test(l) ? i + 1 : 0).filter(Boolean); }));
+  function hunkFor(v, stage) { const hs = v.git.simDiff; if (!hs.length) return null; const st = SRC[v.version], lo = st[stage], hi = st[stage + 1] || 1e9;
+    const inStage = hs.filter(h => { const n = +(/\+(\d+)/.exec(h.hunk) || [])[1]; return n >= lo && n < hi; }); const pool = inStage.length ? inStage : hs;
+    return pool.slice().sort((a, b) => (a.del.length + a.add.length) - (b.del.length + b.add.length))[0]; }
+  let scene = null, views = null, fr = 0;
+  function setup(f) {
+    let key; if (f < A_FR) key = 'A'; else if (f < A_FR + PICK.length * B_FR) key = 'B' + Math.floor((f - A_FR) / B_FR); else key = 'C';
+    if (key === scene) return; scene = key;
+    if (key === 'A') views = [new R.SwarmView(HG_VERSIONS[1], 1, SEED, {}), new R.SwarmView(HG_VERSIONS[LAST.version], 1, SEED, {})];
+    else if (key[0] === 'B') { const v = PICK[+key.slice(1)]; views = [new R.SwarmView(HG_VERSIONS[v.version], pickStage(v), SEED, { bars: v.metrics.mid })]; views.v = v; }
+  }
+  function step(steps) { if (scene !== 'C') views.forEach(v => v.update(steps)); }
+  function draw(f) {
+    c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = '#0b0d22'; c.fillRect(0, 0, W, 1080);
+    if (scene === 'A') {
+      views[0].draw(c, 0, 0, W, 303, { versionLabel: 1, accent: '#ff8fa0' }); views[1].draw(c, 0, 305, W, 303, { versionLabel: LAST.version, accent: '#5df2a0' }); c.fillStyle = '#fff'; c.fillRect(0, 303, W, 2);
+      T(c, 'Claude Fable 5.2 built this game.', 40, 690, 46, '#fff', 'left', 900); T(c, 'Then 100 bots played it, and it fixed what they found.', 40, 742, 33, '#c9cdf5', 'left', 700);
+      const a = Math.round(views[0].midPct()), b = Math.round(views[1].midPct());
+      T(c, 'v1', 40, 900, 100, '#ff8fa0', 'left', 900); T(c, a + '%', 190, 900, 100, '#fff', 'left', 900); T(c, '→', 470, 890, 70, '#7d83b0', 'center', 900); T(c, 'v' + LAST.version, 540, 900, 100, '#5df2a0', 'left', 900); T(c, b + '%', 1040, 900, 100, '#fff', 'right', 900);
+      T(c, 'mid-skill bots that finish stage 2 · same seed ' + SEED + ' · same 100 bot skill profiles', 40, 952, 23, '#9aa0c8', 'left', 700); speedTag(1010);
+      T(c, 'top: first version · bottom: version ' + LAST.version, 40, 1034, 22, '#7d83b0', 'left', 700);
+    } else if (scene[0] === 'B') {
+      const v = views.v, i = ALL.indexOf(v), prev = i ? ALL[i - 1] : null; views[0].draw(c, 0, 0, W, GH, { full: true, speed: SPEED, versionLabel: v.version });
+      T(c, 'v' + v.version, 36, 770, 150, '#ff7ad9', 'left', 900); T(c, 'version ' + v.version + ' of ' + N, 40, 808, 22, '#9aa0c8', 'left', 700);
+      const band = v.metrics.inBand, bc = band === 8 ? '#5df2a0' : band >= 4 ? '#ffb347' : '#ff5d73'; c.fillStyle = bc; c.beginPath(); c.roundRect(40, 826, 250, 44, 8); c.fill(); T(c, band + '/8 stages fair', 165, 857, 24, '#10122c', 'center', 900);
+      let y = wrap(v.git.subject, 330, 668, 715, 31, '#fff', 800, 38, 3) + 44;
+      const h = hunkFor(v, views[0].stageIndex); if (h) { if (h.del) { mono('- ' + h.del, 330, y, 22, '#ff8fa0', 715); y += 30; } if (h.add) { mono('+ ' + h.add, 330, y, 22, '#7df5b4', 715); y += 30; } } else { mono('first commit', 330, y, 22, '#7d83b0', 715); y += 30; }
+      const d = prev && prev.panelScore != null ? v.panelScore - prev.panelScore : null; y = Math.max(y + 14, 846);
+      T(c, 'playtesters ' + v.panelScore.toFixed(1) + ' / 10', 330, y, 30, '#ffe27a', 'left', 900); if (d != null) T(c, (d >= 0 ? '▲ ' : '▼ ') + Math.abs(d).toFixed(1), 660, y, 30, d >= 0 ? '#5df2a0' : '#ff5d73', 'left', 900);
+      chart(40, 900, 1000, 150, v.version); T(c, 'stages in the 60–80% pass band, by version (showing ' + PICK.length + ' of ' + N + ')', 40, 896, 16, '#7d83b0', 'left', 700);
+    } else {
+      const a = ALL[0]; T(c, 'v1', 300, 300, 150, '#ff8fa0', 'center', 900); T(c, '→', 540, 285, 110, '#7d83b0', 'center', 900); T(c, 'v' + LAST.version, 790, 300, 150, '#5df2a0', 'center', 900);
+      const rows = [[`${a.metrics.inBand}/8 → ${LAST.metrics.inBand}/8`, 'stages in the fair band (60–80% of mid-skill bots finish)'], [`${a.panelScore.toFixed(1)} → ${LAST.panelScore.toFixed(1)}`, 'playtester panel score out of 10'], [H.totals.botRuns.toLocaleString('en'), 'bot runs'], [N + ' commits', 'each with its measurement in the message']];
+      rows.forEach((r, k) => { T(c, r[0], 540, 440 + k * 128, 78, '#fff', 'center', 900); T(c, r[1], 540, 478 + k * 128, 24, '#9aa0c8', 'center', 700); });
+      T(c, 'Bots are scripts with noise. Reviewers are AI subagents. No human playtest yet.', 540, 1010, 22, '#7d83b0', 'center', 700); T(c, 'HUNDRED GHOSTS', 540, 130, 44, '#ffe27a', 'center', 900);
+    }
+  }
+  // capture mode: one call = one 30 fps video frame (2 x SPEED sim steps)
+  window.__post = { total: TOTAL, fps: FPS, frame(f) { setup(f); step(SPEED * 2); draw(f); return f + 1 < TOTAL; } };
+  if (!CAP) { let f = 0, acc = 0, last = 0; const loop = now => { acc += last ? now - last : 0; last = now; while (acc >= 1000 / FPS) { acc -= 1000 / FPS; if (f < TOTAL) { setup(f); step(SPEED * 2); f++; } } if (acc > 200) acc = 0; draw(f); requestAnimationFrame(loop); }; addEventListener('keydown', e => { if (e.code === 'KeyR') { f = 0; scene = null; } }); requestAnimationFrame(loop); }
+  window.__ready = true;
+})();
+</script>
+</body>
+</html>

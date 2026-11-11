@@ -27,6 +27,7 @@ The two install steps are necessary only for the measurement tools. The game its
 | `index.html?mode=replay&a=1&b=12&stage=2&speed=4` | Two versions, top and bottom, same seed. |
 | `index.html?mode=play&auto=1` | A top-skill bot plays through the human input path. |
 | `viewer.html` | Split-screen history, v1 to v12, 40.8 s. Options: `?per=3.3&speed=8`. `R` starts it again. |
+| `post.html` | Square 1080x1080 short cut for a social video (24.7 s): v1 against v12, then 5 of the 12 versions, then the end card. `?v=1,3,6,7,12` picks the versions. `node tools/render-post.mjs` renders it to `video/hundred-ghosts-post.mp4` (needs ffmpeg). |
 
 Controls: arrow keys or A/D to move, Space / Z / Up to jump, R to restart a stage, Esc for the menu. On a touch screen: two buttons at the bottom left, JUMP at the bottom right.
 
