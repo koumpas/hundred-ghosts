@@ -41,14 +41,18 @@ node tools/run-swarm.mjs
 
 ## Leaderboard (hosted game only)
 
-There are two boards. **Full run:** the total time for all 8 stages, from stage 1. **Stage records:** the best time for each stage, from a full run or from one stage played alone (STAGE SELECT in the menu). People and bots have separate records; the best bot time is shown as the time to beat. A tie goes to the earlier run.
+There are two boards. **Full run:** the total time for all 8 stages, from stage 1. **Stage records:** the best time for each stage, from a full run or from one stage played alone (STAGE SELECT in the menu). A tie goes to the earlier run.
+
+Three kinds of entry:
+- a person's run;
+- `GHOST`: a seeded, replay-checked run by a scripted bot of ordinary skill (Wisp, Boo, Mist). These are ranked, so the board is not empty and the first records can be beaten;
+- the **perfect time**: the best run by the top-skill bot (best of 600 full runs, best of 300 for each stage). It is shown as a reference line and is not ranked.
 
 After a run, the results screen asks for a name and sends the run to `/api/scores`.
 
 - **The page does not send a time.** It sends the recorded inputs (one code for each tick). The server replays them with the same `sim.js` and `play.js` and stores the time that the replay gives. A cut or changed recording is refused.
 - **Storage:** one small file for each score in a private Vercel Blob store. All fields are in the file name, so a listing is the leaderboard.
-- **Badges:** `BOT` is a real, replay-checked run of a scripted ghost bot. `PAR` is a target time set by the owner, not a played run; a real run by the owner replaces it.
-- **Reserved names** (`alex`, `ghost…`) need an owner key that is not in this repository.
+- **Reserved names** (`alex`, `ghost…`), ghost entries and the perfect time need an owner key that is not in this repository.
 - **Rate limit:** 6 submissions in 10 minutes and 30 in 24 hours for each visitor. The address is stored only as a hash.
 - **Names:** swear words and slurs are refused, also with digits, dashes or stretched letters (`lib/names.js`; the lists are stored in ROT13). A word list cannot catch all cases.
 - **One stored run for each name:** the best one.

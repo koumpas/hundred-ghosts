@@ -102,21 +102,23 @@ function drawPlay() {
 // ---------- results, name entry, leaderboard, stage select ----------
 // The server never takes a time from the page. It replays the recorded inputs with the same sim and stores what it gets.
 // Two boards: the full run (all stages, total time) and one record list for each stage.
-const B = { rows: null, stages: null, status: '', name: '', sent: false, busy: false, mine: '', kind: 'h', records: [] };
+const B = { rows: null, stages: null, perfect: null, perfectStages: [], status: '', name: '', sent: false, busy: false, mine: '', kind: 'h', records: [] };
+const setBoards = d => { B.rows = d.scores; B.stages = d.stages; B.perfect = d.perfect; B.perfectStages = d.perfectStages || []; };
 const store = { get(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
 if (Q.get('owner')) store.set('hg_owner', Q.get('owner'));
 const sec = f => (f / 60).toFixed(2) + ' s';
-function loadBoard() { B.status = 'loading…'; fetch('api/scores', { cache: 'no-store' }).then(r => r.ok ? r.json() : Promise.reject()).then(d => { B.rows = d.scores; B.stages = d.stages; B.status = ''; }).catch(() => { B.rows = B.stages = null; B.status = 'leaderboard not available here (it needs the hosted game)'; }); }
+function loadBoard() { B.status = 'loading…'; fetch('api/scores', { cache: 'no-store' }).then(r => r.ok ? r.json() : Promise.reject()).then(d => { setBoards(d); B.status = ''; }).catch(() => { B.rows = B.stages = null; B.status = 'leaderboard not available here (it needs the hosted game)'; }); }
 function openBoard() { state = 'board'; B.mine = ''; loadBoard(); }
 function openSelect() { state = 'select'; loadBoard(); }
 function openResults() { B.sent = false; B.busy = false; B.mine = ''; B.records = []; B.name = store.get('hg_name'); loadBoard(); }
-const stageBest = (i, kind) => B.stages && B.stages[i] ? B.stages[i].find(r => r.kind === kind) : null;
+const stageRecord = i => B.stages && B.stages[i] && B.stages[i][0] || null;   // the record of a stage: the first row of its list
+const stagePerfect = i => B.perfectStages[i] || null;
 function submitScore() {
   if (B.busy || B.sent || !B.name) return; B.busy = true; B.status = 'checking your run…'; store.set('hg_name', B.name);
   const run = G.single ? { stage: G.stage, rec: G.rec[G.stage] } : { stages: G.rec };
   fetch('api/scores', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(Object.assign({ name: B.name, version: SIM.VERSION, key: store.get('hg_owner') || undefined }, run)) })
     .then(r => r.json().then(d => ({ ok: r.ok, d }))).then(({ ok, d }) => { B.busy = false; if (!ok) { B.status = d.error || 'not accepted'; return; }
-      B.sent = true; B.rows = d.scores; B.stages = d.stages; B.mine = B.name; B.kind = d.kind; B.records = d.records || []; HG.submitted = d;
+      B.sent = true; setBoards(d); B.mine = B.name; B.kind = d.kind; B.records = d.records || []; HG.submitted = d;
       B.status = (d.full ? 'rank ' + d.rank + ' · ' : '') + (B.records.length ? (d.full ? B.records.length + ' stage record' + (B.records.length > 1 ? 's' : '') : 'NEW STAGE RECORD') + ' · ' : '') + 'checked by replay on the server'; })
     .catch(() => { B.busy = false; B.status = 'could not reach the leaderboard'; });
 }
@@ -130,7 +132,10 @@ function updateResults() {
   if (hit('Enter') || hit('Space') || taps.length) state = G.single ? 'select' : 'title';
 }
 function updateBoard() { if (hit('Escape') || hit('Enter') || hit('Space') || taps.length) state = 'title'; }
-function badge(kind, x, y) { ctx.fillStyle = kind === 'b' ? '#6ec6ff' : '#ffb347'; ctx.beginPath(); ctx.roundRect(x, y - 13, 36, 16, 4); ctx.fill(); text(ctx, kind === 'b' ? 'BOT' : 'PAR', x + 18, y - 1, 10, '#10122c', 'center', 900); }
+function badge(kind, x, y) { ctx.fillStyle = '#6ec6ff'; ctx.beginPath(); ctx.roundRect(x, y - 13, 46, 16, 4); ctx.fill(); text(ctx, 'GHOST', x + 23, y - 1, 10, '#10122c', 'center', 900); }
+// the reference line under a list: the best bot run. It is not a rank.
+function perfectLine(x, y, w, frames) { if (!frames) return; ctx.strokeStyle = 'rgba(154,160,200,.35)'; ctx.lineWidth = 1; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(x, y - 20); ctx.lineTo(x + w, y - 20); ctx.stroke(); ctx.setLineDash([]);
+  text(ctx, 'PERFECT TIME', x, y, 11, '#9aa0c8', 'left', 800); text(ctx, 'best bot run · not ranked', x + 92, y, 11, '#7d83b0', 'left', 600); text(ctx, sec(frames), x + w - 50, y, 13, '#9aa0c8', 'right', 800); }
 function drawRows(x, y, w, maxRows, rows, title, sub) {
   text(ctx, title, x, y, 16, '#ffe27a', 'left', 900); text(ctx, sub, x + w, y, 11, '#9aa0c8', 'right', 600);
   if (!rows) { text(ctx, B.status || '', x, y + 34, 13, '#9aa0c8', 'left', 600); return; }
@@ -139,22 +144,22 @@ function drawRows(x, y, w, maxRows, rows, title, sub) {
     if (me) { ctx.fillStyle = 'rgba(255,122,217,.22)'; ctx.fillRect(x - 8, yy - 18, w + 16, 25); }
     text(ctx, (i + 1) + '', x + 18, yy, 15, i === 0 ? '#ffe27a' : '#9aa0c8', 'right', 800); text(ctx, r.name, x + 30, yy, 15, '#fff', 'left', 800);
     if (r.kind !== 'h') badge(r.kind, x + 38 + ctx.measureText(r.name).width, yy);
-    text(ctx, sec(r.frames), x + w - 50, yy, 15, '#fff', 'right', 800); text(ctx, r.kind === 'p' ? '' : r.deaths + ' ✕', x + w, yy, 13, '#ff8fa0', 'right', 700); });
+    text(ctx, sec(r.frames), x + w - 50, yy, 15, '#fff', 'right', 800); text(ctx, r.deaths + ' ✕', x + w, yy, 13, '#ff8fa0', 'right', 700); });
 }
-// one line for each stage: the best person, and the best bot as the time to beat
+// one line for each stage: the record and who holds it, and the perfect time as a reference
 function drawStageRecords(x, y, w) {
-  text(ctx, 'STAGE RECORDS', x, y, 16, '#ffe27a', 'left', 900); text(ctx, 'best person · bot time to beat', x + w, y, 11, '#9aa0c8', 'right', 600);
+  text(ctx, 'STAGE RECORDS', x, y, 16, '#ffe27a', 'left', 900); text(ctx, 'record · perfect time', x + w, y, 11, '#9aa0c8', 'right', 600);
   if (!B.stages) { text(ctx, B.status || '', x, y + 34, 13, '#9aa0c8', 'left', 600); return; }
-  for (let i = 0; i < NST; i++) { const yy = y + 30 + i * 27, h = stageBest(i, 'h'), bt = stageBest(i, 'b');
+  for (let i = 0; i < NST; i++) { const yy = y + 30 + i * 27, h = stageRecord(i), pf = stagePerfect(i);
     text(ctx, (i + 1) + '', x + 12, yy, 14, '#9aa0c8', 'right', 800); text(ctx, SIM.STAGES[i].name, x + 22, yy, 14, '#fff', 'left', 700);
-    if (h) { text(ctx, h.name, x + w - 150, yy, 14, '#ff7ad9', 'right', 800); text(ctx, sec(h.frames), x + w - 78, yy, 14, '#fff', 'right', 800); } else text(ctx, 'open', x + w - 78, yy, 13, '#5df2a0', 'right', 800);
-    text(ctx, bt ? sec(bt.frames) : '–', x + w, yy, 12, '#6ec6ff', 'right', 700); }
+    if (h) { text(ctx, h.name, x + w - 150, yy, 14, h.kind === 'h' ? '#ff7ad9' : '#6ec6ff', 'right', 800); text(ctx, sec(h.frames), x + w - 78, yy, 14, '#fff', 'right', 800); } else text(ctx, 'open', x + w - 78, yy, 13, '#5df2a0', 'right', 800);
+    text(ctx, pf ? sec(pf) : '–', x + w, yy, 12, '#7d83b0', 'right', 700); }
 }
 function drawBoard() {
   R.drawBackdrop(ctx, SIM.STAGES[0], tick * 2, LW, LH); ctx.fillStyle = 'rgba(8,8,30,.6)'; ctx.fillRect(0, 0, LW, LH);
   text(ctx, 'HUNDRED GHOSTS', 480, 58, 38, '#fff', 'center', 900); panel(ctx, 24, 82, 446, 392); panel(ctx, 490, 82, 446, 392);
-  drawRows(46, 116, 402, 12, B.rows, 'FULL RUN · v' + SIM.VERSION, 'all 8 stages, total time'); drawStageRecords(512, 116, 402);
-  text(ctx, 'BOT = a scripted ghost bot · PAR = a target time, not a played run · every time is checked by replay on the server', 480, 496, 12, '#9aa0c8', 'center', 600); text(ctx, 'enter / tap: back', 480, 520, 13, '#9aa0c8', 'center', 600);
+  drawRows(46, 116, 402, 10, B.rows, 'FULL RUN · v' + SIM.VERSION, 'all 8 stages, total time'); perfectLine(46, 456, 402, B.perfect); drawStageRecords(512, 116, 402);
+  text(ctx, 'GHOST = a scripted bot of ordinary skill · PERFECT TIME = the best bot run · every time is checked by replay on the server', 480, 496, 12, '#9aa0c8', 'center', 600); text(ctx, 'enter / tap: back', 480, 520, 13, '#9aa0c8', 'center', 600);
 }
 // ---- stage select ----
 let selStage = 0;
@@ -168,25 +173,25 @@ function updateSelect() {
 function drawSelect() {
   R.drawBackdrop(ctx, SIM.STAGES[selStage], tick * 2, LW, LH); ctx.fillStyle = 'rgba(8,8,30,.62)'; ctx.fillRect(0, 0, LW, LH);
   text(ctx, 'STAGE SELECT', 480, 62, 40, '#fff', 'center', 900); text(ctx, 'one stage, one time. Beat the record.', 480, 88, 14, '#c9cdf5', 'center', 600);
-  for (let i = 0; i < NST; i++) { const x = 30 + (i % 4) * 227, y = 104 + (i / 4 | 0) * 188, on = i === selStage, st = SIM.STAGES[i], h = stageBest(i, 'h'), bt = stageBest(i, 'b');
+  for (let i = 0; i < NST; i++) { const x = 30 + (i % 4) * 227, y = 104 + (i / 4 | 0) * 188, on = i === selStage, st = SIM.STAGES[i], h = stageRecord(i), pf = stagePerfect(i);
     panel(ctx, x, y, 215, 172, on ? 0.92 : 0.6); ctx.fillStyle = R.hsl(st.hue + 165, 90, 66); ctx.beginPath(); ctx.roundRect(x, y, 215, 8, 4); ctx.fill(); if (on) { ctx.strokeStyle = '#ff7ad9'; ctx.lineWidth = 3; ctx.beginPath(); ctx.roundRect(x, y, 215, 172, 8); ctx.stroke(); }
     text(ctx, (i + 1) + '', x + 16, y + 52, 38, on ? '#ffe27a' : '#9aa0c8', 'left', 900); text(ctx, st.name, x + 52, y + 46, 17, '#fff', 'left', 800);
     text(ctx, 'RECORD', x + 16, y + 84, 10, '#9aa0c8', 'left', 800);
-    if (h) { text(ctx, sec(h.frames), x + 16, y + 110, 22, '#fff', 'left', 900); text(ctx, h.name, x + 199, y + 110, 14, '#ff7ad9', 'right', 800); } else text(ctx, B.stages ? 'open' : '…', x + 16, y + 110, 22, '#5df2a0', 'left', 900);
-    text(ctx, 'BOT TO BEAT', x + 16, y + 136, 10, '#9aa0c8', 'left', 800); text(ctx, bt ? sec(bt.frames) : '–', x + 16, y + 156, 15, '#6ec6ff', 'left', 800); }
+    if (h) { text(ctx, sec(h.frames), x + 16, y + 110, 22, '#fff', 'left', 900); text(ctx, h.name, x + 199, y + 110, 14, h.kind === 'h' ? '#ff7ad9' : '#6ec6ff', 'right', 800); } else text(ctx, B.stages ? 'open' : '…', x + 16, y + 110, 22, '#5df2a0', 'left', 900);
+    text(ctx, 'PERFECT TIME', x + 16, y + 136, 10, '#7d83b0', 'left', 800); text(ctx, pf ? sec(pf) : '–', x + 16, y + 156, 14, '#9aa0c8', 'left', 700); }
   text(ctx, B.stages ? '← → ↑ ↓ choose · enter / tap: play · esc: menu' : (B.status || ''), 480, 508, 13, '#9aa0c8', 'center', 600);
 }
 // ---- results ----
 function drawResults() {
   R.drawBackdrop(ctx, SIM.STAGES[G.single ? G.stage : 0], tick * 2, LW, LH); ctx.fillStyle = 'rgba(8,8,30,.6)'; ctx.fillRect(0, 0, LW, LH);
   panel(ctx, 30, 86, 430, 330); panel(ctx, 480, 86, 450, 400);
-  if (G.single) { const i = G.stage, f = G.frames[i], h = stageBest(i, 'h'), bt = stageBest(i, 'b');
+  if (G.single) { const i = G.stage, f = G.frames[i], h = stageRecord(i), pf = stagePerfect(i);
     text(ctx, 'STAGE CLEAR', 480, 62, 44, '#ffe27a', 'center', 900);
     text(ctx, 'STAGE ' + (i + 1), 52, 124, 13, '#9aa0c8', 'left', 800); text(ctx, SIM.STAGES[i].name, 52, 156, 28, '#fff', 'left', 900);
-    text(ctx, sec(f), 52, 236, 64, '#ffe27a', 'left', 900); text(ctx, G.dcount[i] + ' ✕', 440, 236, 24, '#ff8fa0', 'right', 900);
+    text(ctx, f !== undefined ? sec(f) : G.times[i].toFixed(2) + ' s', 52, 236, 64, '#ffe27a', 'left', 900); text(ctx, G.dcount[i] + ' ✕', 440, 236, 24, '#ff8fa0', 'right', 900);
     if (B.sent && B.records.includes(i)) text(ctx, '★ NEW STAGE RECORD', 52, 284, 22, '#5df2a0', 'left', 900);
-    else { text(ctx, 'record: ' + (h ? sec(h.frames) + ' by ' + h.name : 'open'), 52, 284, 15, '#ff7ad9', 'left', 800); }
-    text(ctx, 'bot to beat: ' + (bt ? sec(bt.frames) : '–'), 52, 312, 15, '#6ec6ff', 'left', 800);
+    else { text(ctx, 'the record is ' + (h ? sec(h.frames) + ' by ' + h.name : 'open'), 52, 284, 16, '#ff7ad9', 'left', 800); }
+    text(ctx, 'perfect time: ' + (pf ? sec(pf) : '–') + ' (best bot run, for reference)', 52, 312, 13, '#9aa0c8', 'left', 700);
     text(ctx, G.auto ? '' : 'R: try again', 52, 392, 13, '#9aa0c8', 'left', 700);
     drawRows(504, 120, 402, 8, B.stages && B.stages[i], 'STAGE ' + (i + 1) + ' TIMES · v' + SIM.VERSION, SIM.STAGES[i].name);
   } else {
@@ -194,7 +199,7 @@ function drawResults() {
     let tt = 0, dd = 0; G.times.forEach((t, i) => { tt += G.frames[i] !== undefined ? G.frames[i] / 60 : t; dd += G.dcount[i]; const y = 120 + i * 30; text(ctx, (i + 1) + '  ' + SIM.STAGES[i].name, 52, y, 15, '#fff', 'left', 700);
       if (B.sent && B.records.includes(i)) text(ctx, '★', 286, y, 15, '#5df2a0', 'right', 900); text(ctx, t.toFixed(2) + ' s', 360, y, 15, '#b8f', 'right', 800); text(ctx, G.dcount[i] + ' ✕', 440, y, 15, '#ff8fa0', 'right', 800); });
     text(ctx, 'TOTAL', 52, 396, 19, '#ffe27a', 'left', 900); text(ctx, tt.toFixed(2) + ' s', 360, 396, 19, '#ffe27a', 'right', 900); text(ctx, dd + ' ✕', 440, 396, 19, '#ff8fa0', 'right', 900);
-    drawRows(504, 120, 402, 12, B.rows, 'FULL RUN · v' + SIM.VERSION, 'all 8 stages, total time');
+    drawRows(504, 120, 402, 10, B.rows, 'FULL RUN · v' + SIM.VERSION, 'all 8 stages, total time'); perfectLine(504, 468, 402, B.perfect);
   }
   if (canSubmit()) { panel(ctx, 30, 428, 430, 58, 0.9); text(ctx, 'YOUR NAME', 52, 450, 11, '#9aa0c8', 'left', 800); text(ctx, B.name + (tick % 40 < 20 ? '▌' : ''), 52, 475, 20, '#fff', 'left', 900); text(ctx, touch.on ? 'tap to enter' : 'type, then Enter', 440, 475, 12, '#ffe27a', 'right', 700); }
   else if (!G.eligible) text(ctx, G.auto ? 'bot run: not sent to the leaderboard' : 'start from stage 1 for a leaderboard time', 245, 462, 13, '#9aa0c8', 'center', 600);
