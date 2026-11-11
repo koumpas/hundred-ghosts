@@ -29,10 +29,11 @@ const hit = c => pressed.includes(c), anyOf = (...c) => c.some(k => keys[k]);
 // ---------- title ----------
 // Main controls are large. The last entry is "watch only": small, lower, with its own label.
 // (The v1-against-latest replay is not in the menu; it is still at ?mode=replay.)
-const MENU = [['PLAY', () => startPlay(0)], ['STAGE SELECT', () => openSelect()], ['LEADERBOARD', () => openBoard()], ['Watch 100 ghost bots play', () => startSwarm('all'), true]];
+const MENU = [['PLAY', () => needName(() => startPlay(0))], ['STAGE SELECT', () => needName(() => openSelect())], ['LEADERBOARD', () => openBoard()], ['Watch 100 ghost bots play', () => startSwarm('all'), true]];
 const menuBox = i => MENU[i][2] ? { x: 345, y: 452, w: 270, h: 26 } : { x: 280, y: 290 + i * 46, w: 400, h: 40 };
 let menuSel = 0, demo = null;
 function updateTitle() {
+  if (hit('KeyN')) { editName(); return; } for (const t of taps) if (t.x < 240 && t.y > 490) { editName(); return; }
   if (!demo || demo.sw.over) demo = new R.SwarmView(SIM, (tick / 900 | 0) % NST, SEED + (tick / 900 | 0));
   demo.update(1);
   if (hit('ArrowDown') || hit('KeyS')) menuSel = (menuSel + 1) % MENU.length; if (hit('ArrowUp') || hit('KeyW')) menuSel = (menuSel + MENU.length - 1) % MENU.length;
@@ -53,11 +54,12 @@ function drawTitle() {
       text(ctx, (sel ? '▶ ' : '') + m[0], 480, b.y + 28, i === 0 ? 22 : 18, sel ? '#fff' : '#c9cdf5', 'center', 900); } });
   text(ctx, '← → move · space jump · R restart stage · esc menu', 480, 508, 13, '#9aa0c8', 'center', 600);
   text(ctx, 'v' + SIM.VERSION + ' · seed ' + SEED, 944, 526, 12, '#9aa0c8', 'right', 700);
+  text(ctx, 'PLAYER', 16, 508, 10, '#7d83b0', 'left', 800); text(ctx, nick() || 'no name yet', 16, 527, 15, nick() ? '#ff7ad9' : '#9aa0c8', 'left', 800); text(ctx, 'N: change', 26 + ctx.measureText(nick() || 'no name yet').width * 15 / 11, 527, 11, '#7d83b0', 'left', 600);
 }
 
 // ---------- human play ----------
 const G = {};
-function startPlay(i, single) { state = 'play'; G.times = []; G.dcount = []; G.frames = []; G.rec = []; G.auto = Q.get('auto') === '1'; G.keys = Q.get('auto') === '2'; G.single = !!single; G.eligible = !G.auto && (G.single || i === 0); startStage(i); }
+function startPlay(i, single) { state = 'play'; G.times = []; G.dcount = []; G.frames = []; G.rec = []; G.auto = Q.get('auto') === '1'; G.keys = Q.get('auto') === '2'; G.single = !!single; G.eligible = !G.auto && (G.single || i === 0); G.saved = []; startStage(i); }
 function newBot() { const b = SIM.makeBot(99, 100, SEED + G.deaths * 7 + G.stage); b.start = 0; b.next = G.t; return b; }
 function startStage(i) { G.run = HGPlay.newRun(SIM, i); G.codes = []; G.stage = i; G.st = SIM.STAGES[i]; G.t = 0; G.deaths = 0; G.p = SIM.newPlayer(G.st); G.cam = 0; G.respawn = 0; G.clear = 0; G.sq = 0; G.shake = 0; G.parts = new R.Particles(); G.intro = 100; G.bot = newBot(); HG.stage = i; }
 function updatePlay() {
@@ -73,7 +75,7 @@ function updatePlay() {
     if (stepped) { const fx = q.x + 9, fy = q.y + 26;
       if (q.ev & 1) { G.sq = -0.5; G.parts.burst(fx, fy, 5, '#dfe2ff', 1.6, 16); } if (q.ev & 2) { G.sq = 0.6; G.parts.burst(fx, fy, 6, '#dfe2ff', 1.8, 16); } if (q.ev & 4) { G.sq = -0.9; G.parts.burst(fx, fy, 12, '#7cff6b', 3.5, 24); G.shake = 3; }
       if (ev & 1) { G.shake = 11; G.parts.burst(fx, Math.min(q.y + 13, 530), 26, '#ff5d73', 5, 40); G.parts.burst(fx, Math.min(q.y + 13, 530), 10, '#fff', 3, 30); }
-      if (ev & 2) { G.clear = 80; G.frames[G.stage] = run.frames; G.times[G.stage] = +(run.frames / 60).toFixed(2); G.dcount[G.stage] = run.deaths; G.rec[G.stage] = HGPlay.encode(G.codes); G.parts.burst(st.goalX, st.goalY - 40, 40, '#ffe27a', 5, 50); } }
+      if (ev & 2) { G.clear = 80; G.frames[G.stage] = run.frames; G.times[G.stage] = +(run.frames / 60).toFixed(2); G.dcount[G.stage] = run.deaths; G.rec[G.stage] = HGPlay.encode(G.codes); autoSaveStage(G.stage); G.parts.burst(st.goalX, st.goalY - 40, 40, '#ffe27a', 5, 50); } }
     const wW = st.W * SIM.T, tg = Math.max(0, Math.min(wW - LW, G.p.x - LW * 0.4)); G.cam += (tg - G.cam) * 0.14; return;
   }
   if (G.respawn > 0) { G.t++; if (--G.respawn === 0) { G.p = SIM.newPlayer(st); G.bot = newBot(); } return; }
@@ -96,7 +98,8 @@ function drawPlay() {
   panel(ctx, LW - 230, 10, 220, 40); text(ctx, (G.t / 60).toFixed(1) + ' s', LW - 216, 36, 16, '#fff', 'left', 800); text(ctx, 'deaths ' + G.deaths, LW - 22, 36, 14, '#ff8fa0', 'right', 800);
   if (G.auto || G.keys) text(ctx, G.keys ? 'BOT PRESSES THE KEYS' : 'AUTO (bot on the human input path)', 480, 36, 12, '#ffe27a', 'center', 800);
   if (G.intro > 0) { ctx.globalAlpha = Math.min(1, G.intro / 30); text(ctx, st.name.toUpperCase(), 480, 200, 54, '#fff', 'center', 900); ctx.globalAlpha = 1; }
-  if (G.clear > 0) { panel(ctx, 280, 190, 400, 90, 0.85); text(ctx, 'STAGE CLEAR', 480, 232, 34, '#ffe27a', 'center', 900); text(ctx, G.times[G.stage] + ' s · ' + G.deaths + ' deaths', 480, 262, 16, '#fff', 'center', 700); }
+  if (G.clear > 0) { const sv = SAVE_TEXT[G.saved[G.stage]]; if (sv) text(ctx, sv[0], 480, 306, 14, sv[1], 'center', 800);
+    panel(ctx, 280, 190, 400, 90, 0.85); text(ctx, 'STAGE CLEAR', 480, 232, 34, '#ffe27a', 'center', 900); text(ctx, G.times[G.stage] + ' s · ' + G.deaths + ' deaths', 480, 262, 16, '#fff', 'center', 700); }
   if (touch.on) { ctx.globalAlpha = 0.35; [['◀', 65, touch.l], ['▶', 210, touch.r]].forEach(b => { ctx.fillStyle = b[2] ? '#ff7ad9' : '#fff'; ctx.beginPath(); ctx.arc(b[1], 450, 54, 0, 7); ctx.fill(); text(ctx, b[0], b[1], 464, 40, '#10122c', 'center'); }); ctx.fillStyle = touch.j ? '#ff7ad9' : '#fff'; ctx.beginPath(); ctx.arc(860, 440, 64, 0, 7); ctx.fill(); text(ctx, 'JUMP', 860, 448, 22, '#10122c', 'center', 900); ctx.globalAlpha = 1; }
 }
 // ---------- results, name entry, leaderboard, stage select ----------
@@ -110,24 +113,55 @@ const sec = f => (f / 60).toFixed(2) + ' s';
 function loadBoard() { B.status = 'loading…'; fetch('api/scores', { cache: 'no-store' }).then(r => r.ok ? r.json() : Promise.reject()).then(d => { setBoards(d); B.status = ''; }).catch(() => { B.rows = B.stages = null; B.status = 'leaderboard not available here (it needs the hosted game)'; }); }
 function openBoard() { state = 'board'; B.mine = ''; loadBoard(); }
 function openSelect() { state = 'select'; loadBoard(); }
-function openResults() { B.sent = false; B.busy = false; B.mine = ''; B.records = []; B.name = store.get('hg_name'); loadBoard(); }
+function openResults() { B.busy = false; B.sent = false; B.records = G.saved.map((v, i) => v === 'record' ? i : -1).filter(i => i >= 0); B.mine = nick(); B.status = ''; loadBoard(); if (!G.single) autoSaveRun(); }
 const stageRecord = i => B.stages && B.stages[i] && B.stages[i][0] || null;   // the record of a stage: the first row of its list
 const stagePerfect = i => B.perfectStages[i] || null;
-function submitScore() {
-  if (B.busy || B.sent || !B.name) return; B.busy = true; B.status = 'checking your run…'; store.set('hg_name', B.name);
-  const run = G.single ? { stage: G.stage, rec: G.rec[G.stage] } : { stages: G.rec };
-  fetch('api/scores', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(Object.assign({ name: B.name, version: SIM.VERSION, key: store.get('hg_owner') || undefined }, run)) })
-    .then(r => r.json().then(d => ({ ok: r.ok, d }))).then(({ ok, d }) => { B.busy = false; if (!ok) { B.status = d.error || 'not accepted'; return; }
-      B.sent = true; setBoards(d); B.mine = B.name; B.kind = d.kind; B.records = d.records || []; HG.submitted = d;
-      B.status = (d.full ? 'rank ' + d.rank + ' · ' : '') + (B.records.length ? (d.full ? B.records.length + ' stage record' + (B.records.length > 1 ? 's' : '') : 'NEW STAGE RECORD') + ' · ' : '') + 'checked by replay on the server'; })
-    .catch(() => { B.busy = false; B.status = 'could not reach the leaderboard'; });
+
+// ---- nickname: set once, kept in this browser. After that each best time is saved with no more typing. ----
+const NAME_OK = /^[A-Za-z0-9-]{1,12}$/; let nameNext = null, nameDraft = '';
+if (Q.get('name') && NAME_OK.test(Q.get('name'))) store.set('hg_name', Q.get('name'));
+function nick() { const n = store.get('hg_name'); return NAME_OK.test(n) ? n : ''; }
+function needName(next) { if (nick() || Q.get('auto') === '1') { next(); return; } nameNext = next; nameDraft = ''; state = 'name'; }
+function editName() { nameNext = () => { state = 'title'; }; nameDraft = nick(); state = 'name'; }
+function confirmName() { if (!NAME_OK.test(nameDraft)) return; store.set('hg_name', nameDraft); B.nameError = ''; const n = nameNext; nameNext = null; pressed = []; taps = []; if (n) n(); }
+addEventListener('keydown', e => { if (state !== 'name') return;
+  if (e.key.length === 1 && /[A-Za-z0-9-]/.test(e.key) && nameDraft.length < 12) nameDraft += e.key; else if (e.key === 'Backspace') nameDraft = nameDraft.slice(0, -1); else if (e.key === 'Enter') confirmName(); else return; e.preventDefault(); });
+function updateName() {
+  if (hit('Escape')) { nameNext = null; state = 'title'; return; }
+  if (taps.length) { const n = window.prompt('Nickname for the leaderboard (letters, digits, -; 12 at most)', nameDraft) || ''; nameDraft = n.replace(/[^A-Za-z0-9-]/g, '').slice(0, 12); confirmName(); }
 }
-const canSubmit = () => G.eligible && !B.sent && (G.single ? !!G.rec[G.stage] : G.rec.filter(Boolean).length === NST);
-addEventListener('keydown', e => { if (state !== 'results' || !canSubmit()) return;
-  if (e.key.length === 1 && /[A-Za-z0-9-]/.test(e.key) && B.name.length < 12) B.name += e.key; else if (e.key === 'Backspace') B.name = B.name.slice(0, -1); else if (e.key === 'Enter') submitScore(); else return; e.preventDefault(); });
+function drawName() {
+  R.drawBackdrop(ctx, SIM.STAGES[0], tick * 2, LW, LH); ctx.fillStyle = 'rgba(8,8,30,.62)'; ctx.fillRect(0, 0, LW, LH);
+  text(ctx, 'CHOOSE A NICKNAME', 480, 170, 40, '#fff', 'center', 900); panel(ctx, 280, 214, 400, 70, 0.92); ctx.strokeStyle = '#ff7ad9'; ctx.lineWidth = 2; ctx.beginPath(); ctx.roundRect(280, 214, 400, 70, 10); ctx.stroke();
+  text(ctx, nameDraft + (tick % 40 < 20 ? '▌' : ''), 480, 262, 30, '#fff', 'center', 900);
+  text(ctx, 'letters, digits and - · 12 at most', 480, 316, 13, '#9aa0c8', 'center', 600);
+  text(ctx, 'Your best time on each stage, and your best full run, go on the leaderboard by themselves.', 480, 352, 14, '#c9cdf5', 'center', 600);
+  if (B.nameError) text(ctx, 'the last name was not accepted: ' + B.nameError, 480, 388, 13, '#ffb347', 'center', 800);
+  text(ctx, touch.on ? 'tap to type' : 'type, then Enter · esc: back', 480, 470, 13, '#9aa0c8', 'center', 600);
+}
+
+// ---- automatic save: a time goes to the server only when it is better than this player's best in this browser ----
+const SAVE_TEXT = { saving: ['saving your time…', '#9aa0c8'], saved: ['saved to the leaderboard', '#5df2a0'], record: ['★ NEW STAGE RECORD', '#5df2a0'], kept: ['your saved best on this stage stands', '#9aa0c8'], failed: ['not saved', '#ffb347'] };
+const pbKey = k => 'hg_pb_v' + SIM.VERSION + '_' + nick().toLowerCase() + '_' + k;
+function post(body, done) {
+  fetch('api/scores', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(Object.assign({ name: nick(), version: SIM.VERSION, key: store.get('hg_owner') || undefined }, body)) })
+    .then(r => r.json().then(d => ({ ok: r.ok, d }))).then(done).catch(() => done({ ok: false, d: { error: 'could not reach the leaderboard' } }));
+}
+const failed = d => { B.status = d.error || 'not saved'; if (/name/.test(d.error || '')) B.nameError = d.error; };
+function autoSaveStage(i) {                 // at each stage clear, also in a full run that is not finished later
+  if (G.auto || !nick() || !G.rec[i]) return; const f = G.frames[i], pb = +store.get(pbKey('s' + i)) || 1e9;
+  if (f >= pb) { G.saved[i] = 'kept'; return; } G.saved[i] = 'saving';
+  post({ stage: i, rec: G.rec[i] }, ({ ok, d }) => { if (!ok) { G.saved[i] = 'failed'; failed(d); return; }
+    store.set(pbKey('s' + i), f); setBoards(d); B.mine = nick(); B.kind = d.kind; G.saved[i] = (d.records || []).includes(i) ? 'record' : 'saved'; if (G.saved[i] === 'record' && !B.records.includes(i)) B.records.push(i); if (G.single) HG.submitted = d; HG.savedStages = (HG.savedStages || 0) + 1; });
+}
+function autoSaveRun() {                    // at the end of a full run from stage 1
+  if (!G.eligible || G.rec.filter(Boolean).length !== NST || !nick()) return; const tot = G.frames.reduce((a, b) => a + b, 0), pb = +store.get(pbKey('run')) || 1e9;
+  if (tot >= pb) { B.sent = true; B.status = 'your best full run is still ' + sec(pb); return; } B.busy = true; B.status = 'saving your run…';
+  post({ stages: G.rec }, ({ ok, d }) => { B.busy = false; if (!ok) { failed(d); return; }
+    store.set(pbKey('run'), tot); setBoards(d); B.sent = true; B.mine = nick(); B.kind = d.kind; HG.submitted = d; B.status = 'saved as ' + nick() + ' · rank ' + d.rank + ' · checked by replay on the server'; });
+}
 function updateResults() {
   if (hit('Escape')) { state = G.single ? 'select' : 'title'; return; }
-  if (canSubmit()) { if (taps.length) { const n = window.prompt('Name for the leaderboard (letters, digits, -; 12 at most)', B.name) || ''; B.name = n.replace(/[^A-Za-z0-9-]/g, '').slice(0, 12); if (B.name) submitScore(); } return; }
   if (G.single && hit('KeyR')) { startPlay(G.stage, true); return; }
   if (hit('Enter') || hit('Space') || taps.length) state = G.single ? 'select' : 'title';
 }
@@ -189,7 +223,7 @@ function drawResults() {
     text(ctx, 'STAGE CLEAR', 480, 62, 44, '#ffe27a', 'center', 900);
     text(ctx, 'STAGE ' + (i + 1), 52, 124, 13, '#9aa0c8', 'left', 800); text(ctx, SIM.STAGES[i].name, 52, 156, 28, '#fff', 'left', 900);
     text(ctx, f !== undefined ? sec(f) : G.times[i].toFixed(2) + ' s', 52, 236, 64, '#ffe27a', 'left', 900); text(ctx, G.dcount[i] + ' ✕', 440, 236, 24, '#ff8fa0', 'right', 900);
-    if (B.sent && B.records.includes(i)) text(ctx, '★ NEW STAGE RECORD', 52, 284, 22, '#5df2a0', 'left', 900);
+    if (G.saved[i] === 'record') text(ctx, '★ NEW STAGE RECORD', 52, 284, 22, '#5df2a0', 'left', 900);
     else { text(ctx, 'the record is ' + (h ? sec(h.frames) + ' by ' + h.name : 'open'), 52, 284, 16, '#ff7ad9', 'left', 800); }
     text(ctx, 'perfect time: ' + (pf ? sec(pf) : '–') + ' (best bot run, for reference)', 52, 312, 13, '#9aa0c8', 'left', 700);
     text(ctx, G.auto ? '' : 'R: try again', 52, 392, 13, '#9aa0c8', 'left', 700);
@@ -197,14 +231,15 @@ function drawResults() {
   } else {
     text(ctx, 'ALL STAGES CLEAR', 480, 62, 44, '#ffe27a', 'center', 900);
     let tt = 0, dd = 0; G.times.forEach((t, i) => { tt += G.frames[i] !== undefined ? G.frames[i] / 60 : t; dd += G.dcount[i]; const y = 120 + i * 30; text(ctx, (i + 1) + '  ' + SIM.STAGES[i].name, 52, y, 15, '#fff', 'left', 700);
-      if (B.sent && B.records.includes(i)) text(ctx, '★', 286, y, 15, '#5df2a0', 'right', 900); text(ctx, t.toFixed(2) + ' s', 360, y, 15, '#b8f', 'right', 800); text(ctx, G.dcount[i] + ' ✕', 440, y, 15, '#ff8fa0', 'right', 800); });
+      if (G.saved[i] === 'record') text(ctx, '★', 286, y, 15, '#5df2a0', 'right', 900); else if (G.saved[i] === 'saved') text(ctx, '✓', 286, y, 13, '#9aa0c8', 'right', 800); text(ctx, t.toFixed(2) + ' s', 360, y, 15, '#b8f', 'right', 800); text(ctx, G.dcount[i] + ' ✕', 440, y, 15, '#ff8fa0', 'right', 800); });
     text(ctx, 'TOTAL', 52, 396, 19, '#ffe27a', 'left', 900); text(ctx, tt.toFixed(2) + ' s', 360, 396, 19, '#ffe27a', 'right', 900); text(ctx, dd + ' ✕', 440, 396, 19, '#ff8fa0', 'right', 900);
     drawRows(504, 120, 402, 10, B.rows, 'FULL RUN · v' + SIM.VERSION, 'all 8 stages, total time'); perfectLine(504, 468, 402, B.perfect);
   }
-  if (canSubmit()) { panel(ctx, 30, 428, 430, 58, 0.9); text(ctx, 'YOUR NAME', 52, 450, 11, '#9aa0c8', 'left', 800); text(ctx, B.name + (tick % 40 < 20 ? '▌' : ''), 52, 475, 20, '#fff', 'left', 900); text(ctx, touch.on ? 'tap to enter' : 'type, then Enter', 440, 475, 12, '#ffe27a', 'right', 700); }
-  else if (!G.eligible) text(ctx, G.auto ? 'bot run: not sent to the leaderboard' : 'start from stage 1 for a leaderboard time', 245, 462, 13, '#9aa0c8', 'center', 600);
-  if (B.status && (B.rows || B.sent)) text(ctx, B.status, 245, 510, 13, B.sent ? '#5df2a0' : '#ffb347', 'center', 800);
-  text(ctx, (canSubmit() ? 'esc' : 'enter / tap') + ': back', 705, 512, 13, '#9aa0c8', 'center', 600);
+  panel(ctx, 30, 428, 430, 58, 0.9); text(ctx, 'PLAYER', 52, 450, 11, '#9aa0c8', 'left', 800); text(ctx, nick() || '–', 52, 475, 20, '#ff7ad9', 'left', 900);
+  const stx = G.auto ? 'bot run: not saved' : G.single ? (SAVE_TEXT[G.saved[G.stage]] || ['', ''])[0] : !G.eligible ? 'start from stage 1 for a full-run time' : B.status;
+  text(ctx, B.nameError ? 'name not accepted: press N on the title screen' : stx, 440, 475, 12, B.nameError ? '#ffb347' : '#5df2a0', 'right', 800);
+  if (!G.single && !G.auto) text(ctx, '★ stage record   ✓ your best on that stage, saved', 245, 510, 12, '#9aa0c8', 'center', 600);
+  text(ctx, 'enter / tap: back', 705, 512, 13, '#9aa0c8', 'center', 600);
 }
 
 // ---------- swarm mode ----------
@@ -260,12 +295,12 @@ window.HG_HEADLESS = { run(stage, seed, n) { const t0 = performance.now(), sw = 
 // ---------- main loop ----------
 function update() {
   tick++;
-  if (state === 'title') updateTitle(); else if (state === 'play') updatePlay(); else if (state === 'results') updateResults(); else if (state === 'board') updateBoard(); else if (state === 'select') updateSelect(); else if (state === 'swarm') updateSwarm(); else if (state === 'replay') updateReplay();
+  if (state === 'title') updateTitle(); else if (state === 'play') updatePlay(); else if (state === 'results') updateResults(); else if (state === 'board') updateBoard(); else if (state === 'name') updateName(); else if (state === 'select') updateSelect(); else if (state === 'swarm') updateSwarm(); else if (state === 'replay') updateReplay();
   pressed = []; taps = [];
 }
 function draw() {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  if (state === 'title') drawTitle(); else if (state === 'play') drawPlay(); else if (state === 'results') drawResults(); else if (state === 'board') drawBoard(); else if (state === 'select') drawSelect(); else if (state === 'swarm') drawSwarm(); else if (state === 'replay') drawReplay();
+  if (state === 'title') drawTitle(); else if (state === 'play') drawPlay(); else if (state === 'results') drawResults(); else if (state === 'board') drawBoard(); else if (state === 'name') drawName(); else if (state === 'select') drawSelect(); else if (state === 'swarm') drawSwarm(); else if (state === 'replay') drawReplay();
   else { ctx.fillStyle = '#0b1026'; ctx.fillRect(0, 0, LW, LH); text(ctx, 'loading…', 480, 270, 20, '#fff', 'center'); }
 }
 let last = 0, acc = 0;
@@ -282,7 +317,7 @@ if (mode === 'headless') { HG.mode = 'headless'; return; }
 Promise.all([getJSON('log/index.json'), getJSON('log/v' + SIM.VERSION + '.json')]).then(r => {
   if (r[0] && r[0].versions && r[0].versions.length) INDEX = r[0]; if (r[1]) LOGS[SIM.VERSION] = r[1];
   const stage = Q.get('stage') || 'all', s0 = stage === 'all' || stage === 'gym' ? stage : +stage - 1;
-  if (mode === 'swarm') startSwarm(s0); else if (mode === 'replay') startReplay(+(Q.get('a') || 1), +(Q.get('b') || INDEX.versions[INDEX.versions.length - 1]), s0); else if (mode === 'play') startPlay(s0 === 'all' ? 0 : s0, s0 !== 'all'); else if (mode === 'board') openBoard(); else if (mode === 'select') openSelect();
+  if (mode === 'swarm') startSwarm(s0); else if (mode === 'replay') startReplay(+(Q.get('a') || 1), +(Q.get('b') || INDEX.versions[INDEX.versions.length - 1]), s0); else if (mode === 'play') needName(() => startPlay(s0 === 'all' ? 0 : s0, s0 !== 'all')); else if (mode === 'board') openBoard(); else if (mode === 'select') openSelect();
   requestAnimationFrame(frame);
 });
 })();

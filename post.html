@@ -12,7 +12,8 @@
 // Square cut of the story for a social video. One idea and one headline for each shot.
 //   1. both facts: the game (one ghost) above, the 100 bots below      2. normal play
 //   3. the system: 100 bots, red = deaths                               4. (off by default) v1..vN counter
-//   5. v1 against the last version, same seed                           6. end card
+//   5. v1 against the last version, same seed                           6. end card, then a plain last card
+// All text is motion graphics: see "motion graphics" below.
 // All numbers come from log/history.json; the game areas run versions/vN.js live.
 // ?capture=1 lets tools/render-post.mjs drive it frame by frame.
 // Headline font: Phosphate (a macOS system font). Other systems fall back to Impact.
@@ -51,68 +52,122 @@
     c.translate(Math.sin(this.t * 1.9) * sh, this.h + 40 * Z - 544 * Z + Math.cos(this.t * 2.3) * sh); c.scale(Z, Z); c.translate(-this.cam, 0); R.drawWorld(c, API, this.st, this.t, this.cam, this.vw, { cr: p.cr }); this.parts.draw(c);
     if (p.alive && this.respawn === 0 && !p.done) R.drawPlayer(c, p, this.t, this.sq + Math.max(-0.3, Math.min(0.3, -p.vy * 0.02))); c.restore(); };
 
-  // ---- timeline (frames at 30 fps) ----
-  const S1 = 144, CLIPS = [[2, 24, 48], [5, 16, 48]], S2 = CLIPS.reduce((a, k) => a + k[2], 0), S3 = 120, TICK = 8, HOLD = 66, S4 = Q.get('versions') === '1' ? (N - 1) * TICK + HOLD + 24 : 0, S5 = 216, S6 = 192;
-  const T2 = S1, T3 = T2 + S2, T4 = T3 + S3, T5 = T4 + S4, T6 = T5 + S5, TOTAL = T6 + S6;
-  let scene = null, views = null, play = null;
+  // ---- timeline (frames at 30 fps; 150 BPM, so 1 beat = 12 frames and 1 bar = 48 frames; 17 bars in all) ----
+  const S1 = 144, CLIPS = [[2, 24, 48], [5, 16, 48]], S2 = CLIPS.reduce((a, k) => a + k[2], 0), S3 = 120, S5 = 216, S6 = 240;
+  const T2 = S1, T3 = T2 + S2, T5 = T3 + S3, T6 = T5 + S5, TOTAL = T6 + S6;
+  let scene = null, views = null, play = null, sceneStart = 0;
   function setup(f) {
-    let key; if (f < T2) key = '1'; else if (f < T3) key = '2' + (f - T2 < CLIPS[0][2] ? 'a' : 'b'); else if (f < T4) key = '3'; else if (f < T5) key = '4'; else if (f < T6) key = '5' + (f - T5 < S5 / 2 ? 'a' : 'b'); else key = '6';
-    if (key === scene) return; scene = key;
+    let key, start; if (f < T2) { key = '1'; start = 0; } else if (f < T3) { const a = f - T2 < CLIPS[0][2]; key = '2' + (a ? 'a' : 'b'); start = a ? T2 : T2 + CLIPS[0][2]; } else if (f < T5) { key = '3'; start = T3; } else if (f < T6) { const a = f - T5 < S5 / 2; key = '5' + (a ? 'a' : 'b'); start = a ? T5 : T5 + S5 / 2; } else { key = '6'; start = T6; }
+    if (key === scene) return; scene = key; sceneStart = start;
     if (key === '1') { play = new Play(0, 0, 1.5, 0, 540); views = [new R.SwarmView(API, 0, SEED, {})]; }
     else if (key[0] === '2') { const k = CLIPS[key[1] === 'a' ? 0 : 1]; play = new Play(k[0], k[1], 1.7, 0, 1080); }
     else if (key === '3') views = [new R.SwarmView(API, 1, SEED, {})];
     else if (key[0] === '5') { const k = key[1] === 'a' ? HARD : EASY; views = [new R.SwarmView(HG_VERSIONS[k.v.version], k.stage, SEED, {}), new R.SwarmView(API, k.stage, SEED, {})]; views.k = k; views.hard = key[1] === 'a';
-      // the result of this exact run (same seed), so the numbers are on screen from the first frame
+      // the result of this exact run (same seed), so the numbers on screen are the real end values
       views.fin = [k.v.version, LAST.version].map(n => { const t = new R.SwarmView(HG_VERSIONS[n], k.stage, SEED, {}); while (!t.sw.over) t.sw.step(); return Math.round(t.midPct()); }); }
   }
   function step() { if (scene === '1') { play.step(); play.step(); views[0].update(6); } else if (scene[0] === '2') { play.step(); play.step(); } else if (scene === '3') views[0].update(8); else if (scene[0] === '5') views.forEach(v => v.update(16)); }
-  function versionAt(g) { // shot 4: which version is shown at local frame g, and whether it is the stop on the failed fix
-    const before = FAIL.i * TICK; if (g < before) return { i: Math.floor(g / TICK), hold: false }; if (g < before + HOLD) return { i: FAIL.i, hold: true, k: (g - before) / HOLD }; return { i: Math.min(N - 1, FAIL.i + 1 + Math.floor((g - before - HOLD) / TICK)), hold: false }; }
+
+  // ---------- motion graphics ----------
+  // All text moves: words slide in one after another with a motion-blur smear, rules wipe in, numbers count up,
+  // and each block leaves before the cut. g is the frame inside the shot.
+  const SANS = Q.get('font') === 'phosphate' ? DISP : '"Helvetica Neue", "Inter", "Arial", sans-serif';
+  const clamp = t => t < 0 ? 0 : t > 1 ? 1 : t, outQ = t => 1 - Math.pow(1 - clamp(t), 4), inQ = t => Math.pow(clamp(t), 3);
+  const fontOf = (size, wt) => `${wt} ${size}px ${SANS}`;
+  // segs: [[text, weight, colour], ...]; o: { in, out, dir (1 = from the right), align, dist, stagger, track }
+  function line(segs, x, y, size, g, o) {
+    o = o || {}; const dir = o.dir === undefined ? 1 : o.dir, dist = o.dist || size * 2.2, stag = o.stagger === undefined ? 2 : o.stagger, tin = o.in || 0, tout = o.out === undefined ? 1e9 : o.out;
+    if (g < tin) return; const words = [];
+    c.textBaseline = 'alphabetic'; c.textAlign = 'left'; c.letterSpacing = (o.track || 0) + 'px';
+    for (const [txt, wt, col] of segs) for (const w of txt.split(/(?<= )/)) { if (!w) continue; c.font = fontOf(size, wt); words.push({ w, wt, col: col || '#fff', width: c.measureText(w).width }); }
+    const total = words.reduce((a, w) => a + w.width, 0); let cx = o.align === 'center' ? x - total / 2 : o.align === 'right' ? x - total : x;
+    const pos = (gg, k) => { const p = outQ((gg - tin - k * stag) / 15), q = gg >= tout ? inQ((gg - tout - k) / 9) : 0; return { dx: (1 - p) * dist * dir - q * dist * dir, a: clamp((gg - tin - k * stag) / 5) * (1 - q) }; };
+    words.forEach((w, k) => { const now = pos(g, k), prev = pos(g - 1, k); if (now.a <= 0) { cx += w.width; return; }
+      c.font = fontOf(size, w.wt); c.fillStyle = w.col; const move = Math.abs(now.dx - prev.dx), n = move > 2 ? 9 : 1;
+      for (let i = 0; i < n; i++) { const k2 = n === 1 ? 1 : i / (n - 1); c.globalAlpha = now.a * (n === 1 ? 1 : 0.2 + 0.1 * k2); c.fillText(w.w, cx + prev.dx + (now.dx - prev.dx) * k2, y); }
+      if (n > 1) { c.globalAlpha = now.a * 0.85; c.fillText(w.w, cx + now.dx, y); }
+      cx += w.width; });
+    c.globalAlpha = 1; c.letterSpacing = '0px';
+  }
+  function rule(x, y, w, g, tin, tout, col) { if (g < tin) return; const p = outQ((g - tin) / 18), q = g >= (tout || 1e9) ? inQ((g - tout) / 8) : 0; c.globalAlpha = 1 - q; c.fillStyle = col || '#fff'; c.fillRect(x + w * q, y, w * p * (1 - q), 3); c.globalAlpha = 1; }
+  function rise(txt, x, y, size, g, tin, tout, col, align, wt) { if (g < tin) return; const p = outQ((g - tin) / 14), q = g >= (tout || 1e9) ? inQ((g - tout) / 8) : 0; c.globalAlpha = clamp((g - tin) / 8) * (1 - q); put(fontOf(size, wt || 400), txt, x, y + (1 - p) * 18, col || '#dfe2ff', align); c.globalAlpha = 1; }
+  const count = (from, to, g, tin, dur) => Math.round(from + (to - from) * outQ((g - tin) / dur));
+  // a wide, thin title whose letters come together and sharpen
+  function title(txt, x, y, size, g, tin, tout) { if (g < tin) return; const p = outQ((g - tin) / 22), q = g >= (tout || 1e9) ? inQ((g - tout) / 8) : 0;
+    c.save(); c.globalAlpha = clamp((g - tin) / 10) * (1 - q); c.font = fontOf(size, 200); c.textAlign = 'center'; c.letterSpacing = (size * 0.12 + (1 - p) * size * 0.5) + 'px'; c.shadowColor = 'rgba(255,255,255,.55)'; c.shadowBlur = 26 * (1 - p) + 6; c.fillStyle = '#fff'; c.fillText(txt, x, y); c.restore(); c.letterSpacing = '0px'; }
+  function chip(txt, x, y, col, g, tin, tout) { if (g < tin) return; const p = outQ((g - tin) / 12), q = g >= (tout || 1e9) ? inQ((g - tout) / 8) : 0; c.save(); c.globalAlpha = clamp((g - tin) / 6) * (1 - q); c.translate(-(1 - p) * 60, 0);
+    c.font = fontOf(40, 700); const w = c.measureText(txt).width + 36; c.fillStyle = col; c.beginPath(); c.roundRect(x, y, w, 62, 8); c.fill(); put(fontOf(40, 700), txt, x + 18, y + 45, '#0b0d22'); c.restore(); }
+  const W_ = '#ffffff', GOLD = '#ffe27a', PINK = '#ff7ad9', RED = '#ff7a8c', GREEN = '#5df2a0', DIM = '#c9cdf5';
+
   function draw(f) {
+    const g = f - sceneStart;
     c.setTransform(SCALE, 0, 0, SCALE, 0, 0); c.globalAlpha = 1; c.fillStyle = '#0b0d22'; c.fillRect(0, 0, W, 1080);
-    if (scene === '1') {
-      play.draw(); views[0].draw(c, 0, 540, W, 540, { none: true }); c.fillStyle = '#fff'; c.fillRect(0, 538, W, 4);
-      shade(0, 250, 0.85); shade(542, 270, 0.85);
-      D('I BUILT THIS GAME', 540, 96, 92, '#fff', 'center', 1000); D('WITH FABLE 5.2.', 540, 186, 92, '#ffe27a', 'center', 1000);
-      D('I SET THE DIFFICULTY.', 540, 632, 80, '#fff', 'center', 1010); D('IT FIXED ITSELF TO MATCH.', 540, 718, 80, '#ff7ad9', 'center', 1010);
+    if (scene === '1') {                                  // 144 frames: both facts
+      play.draw(); views[0].draw(c, 0, 540, W, 540, { none: true }); c.fillStyle = '#fff'; c.fillRect(0, 538, W, 4); shade(0, 300, 0.9); shade(542, 300, 0.9);
+      const out = S1 - 12;
+      rule(56, 64, 190, g, 4, out, GOLD);
+      line([['I BUILT ', 300], ['THIS GAME', 700]], 56, 150, 84, g, { in: 6, out });
+      line([['WITH ', 300], ['FABLE 5.2', 700, GOLD]], 56, 240, 84, g, { in: 18, out: out + 2 });
+      rule(56, 606, 190, g, 62, out, PINK);
+      line([['I SET ', 300], ['THE DIFFICULTY.', 700]], 56, 690, 70, g, { in: 64, out: out + 3 });
+      line([['IT ', 300], ['FIXED ITSELF ', 700, PINK], ['TO MATCH.', 300]], 56, 768, 70, g, { in: 80, out: out + 5 });
       tag('bots at ×3 speed', W - 20, 1052);
-    } else if (scene[0] === '2') {
-      play.draw(); shade(0, 220, 0.7); D('HUNDRED GHOSTS', 540, 110, 96, '#fff', 'center'); F('8 stages · ' + play.st.name, 540, 160, 32, '#ffe27a', 'center');
-    } else if (scene === '3') {
-      views[0].draw(c, 0, 0, W, 1080, { none: true }); shade(0, 300, 0.85);
-      D('100 BOTS PLAY', 540, 110, 104, '#fff', 'center'); D('EVERY STAGE.', 540, 212, 104, '#fff', 'center');
-      c.fillStyle = 'rgba(8,10,28,.86)'; c.beginPath(); c.roundRect(60, 862, 960, 120, 18); c.fill(); D('MY TARGET: ' + BAND + ' FINISH.', 540, 920, 56, '#ffe27a', 'center', 900); F('Red shows where they die. Fable 5.2 changes the stage to hit the target.', 540, 962, 26, '#e6e8ff', 'center', 500);
-      tag('bots at ×4 speed', W - 20, 1052);
-    } else if (scene === '4') {
-      const s = versionAt(f - T4), v = ALL[s.i];
-      D('MEASURE. FIX. REPEAT.', 540, 120, 84, '#fff', 'center', 1000);
-      D('V' + v.version, 540, 470, 330, s.hold ? '#ff5d73' : v.version === LAST.version ? '#5df2a0' : '#ff7ad9', 'center');
-      if (s.hold) { D('ITS OWN FIX BROKE A STAGE.', 540, 580, 64, '#fff', 'center', 1000); D(Math.round(FAIL.from) + '% → ' + Math.round(FAIL.to) + '%', 540, 668, 84, '#ff5d73', 'center'); F('of mid-skill bots finish stage ' + (FAIL.stage + 1) + '. Reverted in v' + (v.version + 1) + '.', 540, 714, 28, '#c9cdf5', 'center', 500); }
-      else { D(v.metrics.inBand + ' OF 8 STAGES FAIR', 540, 600, 76, v.metrics.inBand === 8 ? '#5df2a0' : '#fff', 'center', 1000); }
-      const x0 = 90, cw = 900, pw = cw / N, base = 990, ch = 200;
-      ALL.forEach((u, i) => { const on = i <= s.i, bh = ch * u.metrics.inBand / 8; c.fillStyle = !on ? 'rgba(255,255,255,.07)' : u.metrics.inBand === 8 ? '#5df2a0' : i === FAIL.i && s.i >= FAIL.i ? '#ff5d73' : 'rgba(93,242,160,.55)'; c.beginPath(); c.roundRect(x0 + i * pw + 8, base - Math.max(bh, 6), pw - 16, Math.max(bh, 6), 6); c.fill(); F('v' + u.version, x0 + i * pw + pw / 2, base + 34, 22, i === s.i ? '#fff' : '#7d83b0', 'center'); });
-    } else if (scene[0] === '5') {
-      const k = views.k, hard = views.hard;
+    } else if (scene[0] === '2') {                        // 2 x 48 frames: the game itself
+      play.draw(); shade(0, 260, 0.75);
+      const gg = f - T2; title('HUNDRED GHOSTS', 540, 118, 84, gg, 2, S2 - 10);
+      rule(440, 146, 200, gg, 14, S2 - 10); rise('8 STAGES', 540, 196, 26, gg, 16, S2 - 10, DIM, 'center', 500);
+      line([[play.st.name.toUpperCase(), 700, GOLD]], 56, 1010, 54, g, { in: 3, out: 38, dir: -1 }); rule(56, 1030, 150, g, 4, 38, GOLD);
+    } else if (scene === '3') {                           // 120 frames: the system
+      views[0].draw(c, 0, 0, W, 1080, { none: true }); shade(0, 330, 0.9); const out = S3 - 12;
+      rule(56, 64, 190, g, 3, out);
+      line([['100 BOTS', 700]], 56, 160, 104, g, { in: 4, out });
+      line([['PLAY ', 300], ['EVERY STAGE.', 300]], 56, 252, 78, g, { in: 14, out: out + 2 });
+      c.globalAlpha = clamp((g - 44) / 10) * (1 - inQ((g - out) / 8)); c.fillStyle = 'rgba(8,10,28,.86)'; c.beginPath(); c.roundRect(40, 836, 1000, 196, 18); c.fill(); c.globalAlpha = 1;
+      rise('MY TARGET', 76, 884, 24, g, 48, out, DIM, 'left', 700);
+      line([[BAND + ' ', 700, GOLD], ['FINISH.', 300]], 76, 954, 76, g, { in: 52, out: out + 3 });
+      rise('Red shows where they die. Fable 5.2 changes the stage to hit the target.', 76, 1004, 27, g, 66, out, '#e6e8ff', 'left', 400);
+      tag('bots at ×4 speed', W - 20, 818);
+    } else if (scene[0] === '5') {                        // 2 x 108 frames: too hard, too easy
+      const k = views.k, hard = views.hard, out = 108 - 12;
       views[0].draw(c, 0, 0, W, 398, { none: true }); views[1].draw(c, 0, 402, W, 398, { none: true }); c.fillStyle = '#fff'; c.fillRect(0, 398, W, 4);
-      const lab = (t, y, col) => { c.fillStyle = col; c.beginPath(); c.roundRect(24, y, 150, 74, 12); c.fill(); D(t, 99, y + 58, 60, '#10122c', 'center'); }; lab('V' + k.v.version, 22, '#ff8fa0'); lab('V' + LAST.version, 424, '#5df2a0');
-      const a = views.fin[0], b = views.fin[1];
-      D(hard ? 'TOO HARD. IT MADE IT EASIER.' : 'TOO EASY. IT MADE IT HARDER.', 540, 896, 76, '#fff', 'center', 1000);
-      D(a + '%', 290, 1012, 116, '#ff8fa0', 'center'); D('→', 540, 998, 86, '#7d83b0', 'center'); D(b + '%', 800, 1012, 116, '#5df2a0', 'center');
-      F('of mid-skill bots finish ' + views[0].st.name + ' · my target ' + BAND + ' · same seed', 540, 1056, 23, '#9aa0c8', 'center', 500); tag('bots at ×8 speed', W - 20, 786);
-    } else {
-      // end card: the loop (play, measure, fix), its real counts, and the result growing version by version
-      const g = f - T6;
-      D('I SET THE DIFFICULTY.', 540, 104, 74, '#fff', 'center', 1000); D('FABLE 5.2 FIXED THE GAME TO MATCH.', 540, 184, 74, '#ffe27a', 'center', 1000);
-      const steps = [['PLAY', H.totals.botRuns.toLocaleString('en'), 'bot runs', '#6ec6ff'], ['MEASURE', 'WHO FINISHES', 'against my target', '#ff5d73'], ['FIX', N + ' COMMITS', 'one for each version', '#5df2a0']];
-      steps.forEach((r, i) => { const x = 60 + i * 330; c.fillStyle = 'rgba(255,255,255,.06)'; c.beginPath(); c.roundRect(x, 250, 300, 220, 18); c.fill(); c.fillStyle = r[3]; c.beginPath(); c.roundRect(x, 250, 300, 10, 5); c.fill();
-        D(r[0], x + 150, 340, 62, r[3], 'center', 270); D(r[1], x + 150, 410, 50, '#fff', 'center', 270); F(r[2], x + 150, 446, 23, '#9aa0c8', 'center', 500);
-        if (i < 2) D('→', x + 315, 378, 54, '#7d83b0', 'center'); });
-      F('then again, with the same seeds', 540, 510, 24, '#7d83b0', 'center', 500);
-      const k = Math.min(1, g / 60), shown = Math.min(N - 1, Math.floor(k * N)), cur = ALL[shown], x0 = 90, cw = 900, pw = cw / N, base = 900, ch = 190;
-      D('STAGES ON MY TARGET', 540, 610, 56, '#fff', 'center'); D(FIRST.metrics.inBand + ' OF 8', 250, 690, 70, '#ff8fa0', 'center'); D('→', 540, 682, 60, '#7d83b0', 'center'); D(cur.metrics.inBand + ' OF 8', 830, 690, 70, cur.metrics.inBand === 8 ? '#5df2a0' : '#fff', 'center');
-      ALL.forEach((u, i) => { const on = i <= shown, bh = ch * u.metrics.inBand / 8; c.fillStyle = !on ? 'rgba(255,255,255,.07)' : u.metrics.inBand === 8 ? '#5df2a0' : 'rgba(93,242,160,.55)'; c.beginPath(); c.roundRect(x0 + i * pw + 8, base - Math.max(bh, 6), pw - 16, Math.max(bh, 6), 6); c.fill(); F('v' + u.version, x0 + i * pw + pw / 2, base + 30, 21, i === shown ? '#fff' : '#7d83b0', 'center'); });
-      F('My target: ' + BAND + ' of mid-skill bots finish each stage. Some stages got easier, some got harder.', 540, 980, 22, '#c9cdf5', 'center', 500);
-      F('Bots are scripts with noise. No human playtest yet.', 540, 1040, 22, '#7d83b0', 'center', 500);
+      chip('V' + k.v.version, 24, 22, '#ff8fa0', g, 2, out); chip('V' + LAST.version, 24, 424, GREEN, g, 6, out);
+      line([[hard ? 'TOO HARD. ' : 'TOO EASY. ', 700], ['IT MADE IT ', 300], [hard ? 'EASIER.' : 'HARDER.', 700, GOLD]], 56, 892, 62, g, { in: 4, out });
+      rule(56, 912, 190, g, 8, out, GOLD);
+      const a = count(hard ? 0 : views.fin[0], views.fin[0], g, 22, 30), b = count(views.fin[0], views.fin[1], g, 46, 34);
+      c.font = fontOf(96, 700); const aw = c.measureText(views.fin[0] + '%').width, ax = 56 + aw + 26;   // the arrow starts after the widest value of the first number
+      line([[a + '%', 700, RED]], 56, 1020, 96, g, { in: 20, out: out + 2, dir: -1 });
+      c.globalAlpha = clamp((g - 40) / 8) * (1 - inQ((g - out) / 8)); c.fillStyle = '#7d83b0'; c.fillRect(ax, 982, 70 * outQ((g - 40) / 16), 6); c.globalAlpha = 1;
+      line([[b + '%', 700, GREEN]], ax + 96, 1020, 96, g, { in: 44, out: out + 4 });
+      rise(views[0].st.name.toUpperCase(), 1024, 968, 24, g, 30, out, DIM, 'right', 700); rise('mid-skill bots that finish', 1024, 1000, 22, g, 34, out, '#9aa0c8', 'right', 400); rise('my target ' + BAND + ' · same seed', 1024, 1030, 22, g, 38, out, '#9aa0c8', 'right', 400);
+      tag('bots at ×8 speed', W - 20, 786);
+    } else {                                              // 240 frames: the loop and the result, then the last card
+      const A = 168;                                      // frames of the first part
+      if (g < A) { const out = A - 12;
+        rule(56, 60, 190, g, 2, out, GOLD);
+        line([['I SET ', 300], ['THE DIFFICULTY.', 700]], 56, 138, 70, g, { in: 3, out });
+        line([['FABLE 5.2 ', 700, GOLD], ['FIXED THE GAME ', 700], ['TO MATCH.', 300]], 56, 210, 50, g, { in: 14, out: out + 2 });
+        const steps = [['PLAY', count(0, H.totals.botRuns, g, 34, 40).toLocaleString('en'), 'bot runs', '#6ec6ff'], ['MEASURE', 'WHO FINISHES', 'against my target', RED], ['FIX', N + ' COMMITS', 'one for each version', GREEN]];
+        steps.forEach((r, i) => { const tin = 30 + i * 9, p = outQ((g - tin) / 14), q = inQ((g - out) / 8), x = 56 + i * 330; if (g < tin) return;
+          c.save(); c.globalAlpha = clamp((g - tin) / 6) * (1 - q); c.translate(0, (1 - p) * 40);
+          c.fillStyle = 'rgba(255,255,255,.06)'; c.beginPath(); c.roundRect(x, 286, 300, 200, 14); c.fill(); c.fillStyle = r[3]; c.fillRect(x, 286, 300 * outQ((g - tin - 4) / 16), 6);
+          put(fontOf(26, 700), r[0], x + 24, 336, r[3]); put(fontOf(36, 700), r[1], x + 24, 406, '#fff'); put(fontOf(22, 400), r[2], x + 24, 446, '#9aa0c8'); c.restore();
+          if (i < 2) { c.globalAlpha = clamp((g - tin - 10) / 8) * (1 - q); c.fillStyle = '#7d83b0'; c.fillRect(x + 304, 384, 22 * outQ((g - tin - 10) / 10), 4); c.globalAlpha = 1; } });
+        rise('THEN AGAIN, WITH THE SAME SEEDS', 56, 528, 20, g, 62, out, '#7d83b0', 'left', 700);
+        rise('STAGES ON MY TARGET', 56, 620, 24, g, 70, out, DIM, 'left', 700);
+        const shown = Math.min(N - 1, Math.floor(clamp((g - 78) / 56) * N)), cur = ALL[shown];
+        line([[FIRST.metrics.inBand + ' OF 8', 700, RED]], 56, 708, 84, g, { in: 72, out: out + 2, dir: -1 });
+        c.globalAlpha = clamp((g - 82) / 8) * (1 - inQ((g - out) / 8)); c.fillStyle = '#7d83b0'; c.fillRect(380, 676, 120 * outQ((g - 82) / 14), 6); c.globalAlpha = 1;
+        line([[cur.metrics.inBand + ' OF 8', 700, cur.metrics.inBand === 8 ? GREEN : '#fff']], 540, 708, 84, g, { in: 84, out: out + 4 });
+        const x0 = 56, cw = 968, pw = cw / N, base = 960, ch = 190, q = inQ((g - out) / 8);
+        if (g >= 74) { c.globalAlpha = 1 - q; ALL.forEach((u, i) => { const on = i <= shown, grow = outQ((g - 78 - i * 4) / 12), bh = Math.max(6, ch * u.metrics.inBand / 8 * (on ? grow : 0)); c.fillStyle = !on ? 'rgba(255,255,255,.07)' : u.metrics.inBand === 8 ? GREEN : 'rgba(93,242,160,.55)'; c.beginPath(); c.roundRect(x0 + i * pw + 8, base - bh, pw - 16, bh, 5); c.fill(); put(fontOf(20, i === shown ? 700 : 400), 'v' + u.version, x0 + i * pw + pw / 2, base + 30, i === shown ? '#fff' : '#7d83b0', 'center'); }); c.globalAlpha = 1; }
+        rise('Target: ' + BAND + ' of mid-skill bots finish each stage. Some stages got easier, some got harder.', 56, 1040, 21, g, 100, out, '#9aa0c8', 'left', 400);
+      } else { const h = g - A;                           // the last card: plain, centred
+        title('HUNDRED GHOSTS', 540, 470, 96, h, 4);
+        rule(390, 506, 300, h, 14, 1e9, GOLD);
+        line([['PLAY IT. ', 700], ['BEAT THE BOTS.', 300]], 540, 600, 44, h, { in: 18, align: 'center' });
+        rise('HUNDRED-GHOSTS.VERCEL.APP', 540, 668, 30, h, 30, 1e9, GOLD, 'center', 700);
+        rise('Bots are scripts with noise, not people. The target is my choice.', 540, 1030, 21, h, 38, 1e9, '#7d83b0', 'center', 400);
+      }
     }
   }
   window.__post = { total: TOTAL, fps: FPS, frame(f) { setup(f); step(); draw(f); return f + 1 < TOTAL; } };

@@ -24,9 +24,9 @@ let cache = { at: 0, data: null };
 const same = (r, name, kind) => r.kind === kind && r.name.toLowerCase() === name.toLowerCase();
 const order = (a, b) => a.frames - b.frames || a.deaths - b.deaths || a.ts - b.ts;   // a tie goes to the earlier run
 
-// Rate limit: 6 submissions in 10 minutes and 30 in 24 hours for each visitor. One small marker file for each
+// Rate limit: 30 submissions in 10 minutes and 300 in 24 hours for each visitor. One small marker file for each
 // attempt, under a hash of the address (the address itself is not stored), so the limit holds across server instances.
-const LIMIT_10MIN = 6, LIMIT_DAY = 30;
+const LIMIT_10MIN = 30, LIMIT_DAY = 300;   // the game saves each best stage time by itself, so one full run can be 9 requests
 async function rateLimited(req) {
   const ip = String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown').split(',')[0].trim();
   const id = crypto.createHash('sha256').update(ip + '|' + (process.env.OWNER_KEY || 'hg')).digest('hex').slice(0, 20), now = Date.now();

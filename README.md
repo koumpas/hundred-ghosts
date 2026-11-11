@@ -29,7 +29,7 @@ The two install steps are necessary only for the measurement tools. The game its
 | `index.html?mode=replay&a=1&b=12&stage=2&speed=4` | Two versions, top and bottom, same seed. |
 | `index.html?mode=play&auto=1` | A top-skill bot plays through the human input path. |
 | `viewer.html` | Split-screen history, v1 to v12, 40.8 s. Options: `?per=3.3&speed=8`. `R` starts it again. |
-| `post.html` | Square cut for a social video (25.6 s, 16 bars at 150 BPM), one headline for each shot. `?scale=2` draws it at 2160x2160. Headlines use Phosphate, a macOS system font. Render: `SCALE=2 node tools/render-post.mjs video/master-2160-silent.mp4`, music: `python3 tools/music.py video/music.wav` (an original electronic track made in code with numpy, no samples, no lyrics), then mux with ffmpeg. Outputs: `video/hundred-ghosts-post.mp4` (1080x1080, for upload) and `video/hundred-ghosts-post-2160.mp4` (master). |
+| `post.html` | Square cut for a social video (27.2 s, 17 bars at 150 BPM). All text is motion graphics: words slide in with motion blur, rules wipe in, numbers count up. `?scale=2` draws it at 2160x2160; `?font=phosphate` uses the older headline font. Render: `SCALE=2 node tools/render-post.mjs video/master-2160-silent.mp4`, then mux `video/music-final.wav` with ffmpeg. The music is a generated instrumental track (ElevenLabs Music v2.5 through fal), with four of its own bars repeated to reach the end and set to about -15.5 LUFS; `tools/music.py` is an older track made in code and is not used. Outputs: `video/hundred-ghosts-post.mp4` (1080x1080, for upload) and `video/hundred-ghosts-post-2160.mp4` (master). |
 
 Controls: arrow keys or A/D to move, Space / Z / Up to jump, R to restart a stage, Esc for the menu. On a touch screen: two buttons at the bottom left, JUMP at the bottom right.
 
@@ -48,12 +48,12 @@ Three kinds of entry:
 - `GHOST`: a seeded, replay-checked run by a scripted bot of ordinary skill (Wisp, Boo, Mist). These are ranked, so the board is not empty and the first records can be beaten;
 - the **perfect time**: the best run by the top-skill bot (best of 600 full runs, best of 300 for each stage). It is shown as a reference line and is not ranked.
 
-After a run, the results screen asks for a name and sends the run to `/api/scores`.
+A player sets a nickname once (it is kept in that browser; N on the title screen changes it). After that the game saves by itself: at each stage clear it sends that stage if the time is better than the player's saved best, also in a full run that is not finished, and at the end of a full run it sends the run if the total is better. There is nothing to type after a run.
 
 - **The page does not send a time.** It sends the recorded inputs (one code for each tick). The server replays them with the same `sim.js` and `play.js` and stores the time that the replay gives. A cut or changed recording is refused.
 - **Storage:** one small file for each score in a private Vercel Blob store. All fields are in the file name, so a listing is the leaderboard.
 - **Reserved names** (`alex`, `ghost…`), ghost entries and the perfect time need an owner key that is not in this repository.
-- **Rate limit:** 6 submissions in 10 minutes and 30 in 24 hours for each visitor. The address is stored only as a hash.
+- **Rate limit:** 30 submissions in 10 minutes and 300 in 24 hours for each visitor (one full run can be 9 requests). The address is stored only as a hash.
 - **Names:** swear words and slurs are refused, also with digits, dashes or stretched letters (`lib/names.js`; the lists are stored in ROT13). A word list cannot catch all cases.
 - **One stored run for each name:** the best one.
 - **Limits:** names are not accounts, so two people can use the same name. The check proves that the inputs give the time; it cannot prove that a person, and not a script, made the inputs. Scores belong to a game version: a new `sim.js` version starts an empty board.
