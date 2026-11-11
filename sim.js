@@ -3,7 +3,7 @@
 // so that any old version can be replayed with the same seed.
 (function (root) {
 'use strict';
-const VERSION = 3;
+const VERSION = 4;
 const T = 32, ROWS = 17, LIMIT = 2700; // tile px, rows, stage time limit in frames (45 s at 60 Hz)
 const PH = { w: 18, h: 26, runMax: 4, accG: 0.6, accA: 0.4, fric: 0.5, airFric: 0.12,
   grav: 0.55, jumpV: 10.2, cutV: 3.5, maxFall: 12, coyote: 6, buffer: 6, padV: 15, crumble: 24 };
@@ -110,14 +110,14 @@ function solid(st, p, tx, ty, t) {
   return false;
 }
 // One fixed step. t = real frame (crumble timers), th = frame used for moving hazards
-// (bots plan with th = t - lag, the game always calls it with th = t).
+// (bots plan with th = t - lag for saws and lasers; platforms use t since v4. The game calls it with th = t).
 // p.ev bits: 1 jumped, 2 landed, 4 bounced.
 function step(st, p, dir, jump, t, th) {
   if (!p.alive || p.done) return;
   p.ev = 0;
   const w = PH.w, h = PH.h;
   let carry = 0;
-  if (p.ride >= 0) { const pl = st.plats[p.ride]; platPos(pl, th - 1); const ox = PX; platPos(pl, th); carry = PX - ox; p.y = PY - h; p.vy = 0; }
+  if (p.ride >= 0) { const pl = st.plats[p.ride]; platPos(pl, t - 1); const ox = PX; platPos(pl, t); carry = PX - ox; p.y = PY - h; p.vy = 0; }
   if (dir) { p.vx += dir * (p.ground ? PH.accG : PH.accA); if (p.vx > PH.runMax) p.vx = PH.runMax; if (p.vx < -PH.runMax) p.vx = -PH.runMax; p.face = dir; }
   else { const f = p.ground ? PH.fric : PH.airFric; if (p.vx > f) p.vx -= f; else if (p.vx < -f) p.vx += f; else p.vx = 0; }
   if (jump && !p.jp) p.buf = PH.buffer;
@@ -157,10 +157,10 @@ function step(st, p, dir, jump, t, th) {
     const plats = st.plats;
     for (let i = 0; i < plats.length; i++) {
       const pl = plats[i]; if (p.x + w < pl.minX || p.x > pl.maxX) continue;
-      platPos(pl, th); const lx = PX, top = PY;
+      platPos(pl, t); const lx = PX, top = PY;
       if (p.x + w <= lx || p.x >= lx + pl.w) continue;
       let ok = p.ride === i;
-      if (!ok) { platPos(pl, th - 1); ok = prevB <= PY + 1 && ny + h >= top; }
+      if (!ok) { platPos(pl, t - 1); ok = prevB <= PY + 1 && ny + h >= top; }
       if (ok) { ny = top - h; p.vy = 0; p.ground = true; ride = i; if (!wasG) p.ev |= 2; break; }
     }
   }
