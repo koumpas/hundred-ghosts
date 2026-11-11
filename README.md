@@ -54,6 +54,7 @@ Changes were committed first and measured after that. So a wrong change is in th
 | Item | Count |
 |---|---|
 | Versions (git tags `v1`..`v12`, one commit each) | 12 |
+| Other commits (viewer, tools, README, logs; no change to `sim.js`) | 2 |
 | Versions that changed stages | 9 (v3, v5–v12) |
 | Versions that changed only the bot script | 2 (v2, v4) |
 | Changes that made the result worse and were reverted | 3 (v6 stage 6 spikes; v7 stage 3 saw period; v11 stage 3 saw period) |
